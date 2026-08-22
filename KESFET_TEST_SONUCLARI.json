@@ -1,0 +1,15 @@
+{
+  "version": "0.5.1",
+  "explore_backend_tests": 12,
+  "explore_backend_failures": 0,
+  "explore_ui_contract_tests": 8,
+  "explore_ui_contract_failures": 0,
+  "catalog_topics": 6,
+  "categories": 4,
+  "topic_open_checks": 6,
+  "topic_analysis_checks": 6,
+  "coach_tests": 29,
+  "coach_scenario_checks": 552,
+  "typescript_source_check": "passed",
+  "successful": true
+}

@@ -1,0 +1,48 @@
+N-KÖPRÜ v0.4.4 — YANIT KOÇU FİNAL TEST RAPORU
+Tarih: 20 Ağustos 2026
+
+SONUÇ
+- Regresyon test grubu: 29 / 29 başarılı
+- Toplam senaryo kontrolü: 552
+- Hata: 0
+- API sözleşme testi: başarılı
+- Backend Python py_compile/compileall: başarılı
+- FastAPI /health + /api/rewrite TestClient kontrolü: başarılı
+
+V0.4.4 İLE EKLENEN KRİTİK DÜZELTMELER
+1. Açık ironi/sarkazm literal okunmuyor.
+   Örnek: "Tabii canım, yapay zekâyı yasaklayınca bütün sorunlar sihirli şekilde çözülecek zaten."
+   -> "Yapay zekâyı yasaklamanın tek başına bütün sorunları çözeceğini düşünmüyorum."
+2. Normal "tabii ki", "aynen katılıyorum" ve gerçek olumlu değerlendirmeler için yanlış-pozitif koruması eklendi.
+3. Koşullu/ara pozisyonlar "koşullu/dengeli görüş" olarak etiketleniyor; aynı anda hem destek hem itiraz etiketi verilmesi azaltıldı.
+4. "Serbest olsun ama kaynak göstermeden kabul edilmesin" gibi karma görüşlerde kaynak/kanıt sinyali ayrıca korunuyor.
+5. Hakaret + konuya katkı eleştirisi + bilgi eksikliği aynı cümledeyse, gerçek eleştiri "bilgi/gerekçe eksikliği" olarak korunuyor.
+6. Üretken aday doğrulama kapısı, ironiyi literal bırakmayı ve dengeli görüşü tek tarafa çevirmeyi reddediyor.
+
+REGRESYON KAPSAMI
+- Önceki v0.4.3 testlerinin tamamı
+- 96 saldırı × içerik güvenlik matrisi
+- 300 sabit tohumlu fuzz güvenlik senaryosu
+- 40 ironi × konu matrisi
+- 12 koşullu/dengeli görüş matrisi
+- İroni yanlış-pozitif testleri
+- Ek 36 normal/olumlu ifade taraması: 0 yanlış ironi pozitif
+- Kaynak, sayı, soru ve görüş yönü koruma testleri
+- Bağlamı yeniden değerlendirme, kaynak saldırısı, katkı saldırısı ve saf saldırı testleri
+- Kötü üretken adayın reddi ve güvenli adayın kabulü
+- Yüksek güvenli hızlı yolun üretken modeli çağırmaması
+
+PERFORMANS BENCHMARKI
+- 10 kritik örnek × 100 tur = 1000 çağrı
+- Ortalama: 0.366 ms
+- Medyan: 0.340 ms
+- P95: 0.587 ms
+- Maksimum: 3.940 ms
+
+Bu değerler test çalışma ortamına aittir; kullanıcının bilgisayarında farklı olabilir. Yüksek güvenli durumlar üretken modeli beklemediği için bu dallar milisaniye seviyesinde tamamlanır.
+
+GERÇEK MODEL TEST NOTU
+Bu çalışma ortamında transformers modeli indirilebilir/ağ erişimli durumda olmadığı için Qwen/Qwen2.5-0.5B-Instruct gerçek inference testi burada yeniden koşturulmadı. Kritik ironi, dengeli görüş, kaynak, sayı, soru ve açık saldırı yolları üretken modele bağımlı değildir. Üretken yolun kabul/red mantığı sahte güvenli ve sahte hatalı adaylarla regresyon testinden geçirilmiştir.
+
+KARAR
+Yanıt Koçu v0.4.4 için ironi, dengeli görüş ve birleşik eleştiri düzeltmeleri tamamlandı. Mevcut test kümesinde regresyon bulunmadı.

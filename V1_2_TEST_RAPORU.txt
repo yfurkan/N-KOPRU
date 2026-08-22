@@ -1,0 +1,46 @@
+N-KÖPRÜ v1.2.0 TEST RAPORU
+==========================
+
+Sürüm: 1.2.0
+Ana geliştirme: Semantik Cevapsız Sorular
+
+SONUÇ
+-----
+236 / 236 unittest metodu başarılı.
+Yanıt Koçu 552 ek senaryo kontrolü başarılı.
+Python compileall başarılı.
+
+YENİ V1.2.0 TESTLERİ
+--------------------
+- Soru semantik regresyonu: 15 / 15
+- Soru SQLite/snapshot/bildirim entegrasyonu: 8 / 8
+- Soru UI contract: 10 / 10
+- Toplam yeni test: 33 / 33
+
+KAPSANAN YENİ DAVRANIŞLAR
+-------------------------
+- gerçek soru ve öneri cümlesi ayrımı
+- soru işareti olmadan açık kaynak talebi
+- bilgi, karar ve kaynak/kanıt soru türleri
+- retorik soru ayrımı
+- semantik tekrar gruplama
+- cevapsız/kısmi/yanıtlı durumları
+- görüş kümesi ve dayanak yorum bağlantıları
+- eski snapshot JSON uyumluluğu
+- SQLite snapshot kalıcılığı
+- gerçek süreç restart sonrası yeni alanların korunması
+- yanıtlanmış/retorik sorunun kaynak bildirimi üretmemesi
+- semantik tekrarın yeni soru bildirimi üretmemesi
+- değişmeyen yeniden analizde bildirim dedup
+
+ESKİ REGRESYONLAR
+-----------------
+v1.1.2 ve öncesindeki Bildirimler, Mesajlar, Yer İmleri, Listeler, Keşfet,
+Profil, analiz geçmişi, SQLite kalıcılığı, Yanıt Koçu, İddia Radarı,
+Ortak Zemin ve Köprü testlerinin tamamı geçti.
+
+FRONTEND NOTU
+-------------
+UI sözleşme testleri başarılıdır. Bu çalışma ortamında npm bağımlılık kurulumu
+ağ yetki sınırında durduğu için tam tsc --noEmit ve Next.js production build
+tamamlanamadı; başarılı olduğu iddia edilmez.

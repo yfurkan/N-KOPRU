@@ -1,0 +1,32 @@
+{
+  "version": "0.6.0",
+  "notifications_backend": {
+    "tests": 12,
+    "passed": 12
+  },
+  "explore_backend": {
+    "tests": 12,
+    "passed": 12
+  },
+  "coach_regression": {
+    "tests": 29,
+    "passed": 29,
+    "scenario_checks": 552
+  },
+  "notifications_ui_contract": {
+    "tests": 8,
+    "passed": 8
+  },
+  "explore_ui_contract": {
+    "tests": 8,
+    "passed": 8
+  },
+  "typescript_syntax": {
+    "files": 3,
+    "passed": 3
+  },
+  "next_build": {
+    "run": false,
+    "reason": "npm dependency installation was unavailable in the working container; syntax and UI contracts passed"
+  }
+}

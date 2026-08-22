@@ -1,0 +1,26 @@
+{
+  "version": "1.3.3",
+  "total_test_count": 700,
+  "passed_test_count": 700,
+  "test_suite_count": 40,
+  "previous_regression_count": 572,
+  "new_test_count": 128,
+  "new_suites": {
+    "claim_cache_engine": 44,
+    "cold_warm_technical_evaluation": 36,
+    "api_sqlite_notification_snapshot_persistence": 20,
+    "technical_and_claim_radar_ui_contract": 28
+  },
+  "cache": {
+    "storage": "process-memory",
+    "persistent": false,
+    "max_entries": 512,
+    "key_algorithm": "sha256",
+    "cold_demo_model_inferences": 1,
+    "warm_demo_model_inferences": 0,
+    "demo_cache_hits_over_five_runs": 4,
+    "hardware_independent": true
+  },
+  "typescript_typecheck": "passed",
+  "nextjs_production_build": "passed"
+}

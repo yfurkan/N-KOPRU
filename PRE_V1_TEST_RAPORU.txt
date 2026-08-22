@@ -1,0 +1,41 @@
+N-KÖPRÜ v0.9.2 — PRE-v1 STABİLİZASYON TEST RAPORU
+=========================================================
+Tarih: 20 Ağustos 2026
+
+SONUÇ
+- Python/FastAPI regresyon + UI sözleşme testleri: 147 / 147 başarılı
+- Test dosyası: 11 / 11 başarılı
+- Yanıt Koçu: 29 / 29 test, 552 toplam senaryo kontrolü
+- Python app py_compile: 11 / 11 dosya başarılı
+- TypeScript transpile/sözdizimi: 4 / 4 kaynak, 0 hata
+
+BİLDİRİMLER
+- Tümü / Okunmamış / Okunanlar filtreleri
+- Okundu / okunmadı yönetimi
+- Tekil bildirim silme
+- Okunanları toplu temizleme
+- 5 saniyelik Geri Al
+- Unread badge / toplam-okunan-okunmamış sayaç senkronu
+- Doğru analiz hedefine tek tık geçiş
+- Silinen analiz olayının anında yeniden oluşmaması
+
+GENEL STABİLİZASYON
+- Listeler tamamen silinince varsayılanların istemsiz yeniden doğması engellendi
+- Yer İmleri / Listeler / Bildirimler / özel tartışma kimliklerinde eşzamanlı erişim koruması
+- Keşfet hızlı analizinde paralel yükleme
+- Kullanıcı arayüzündeki v0.x / “GERÇEK MODÜL” geliştirici rozetleri temizlendi
+- Profil placeholder'ındaki sahte sayısal metrikler kaldırıldı
+
+v1.0'A KALAN KRİTİK İŞLER
+1) Kalıcı veri / SQLite
+2) Gerçek Profil + aktivite geçmişi
+3) “Ben Yokken Ne Değişti?” snapshot/diff
+4) Daha güçlü AI tabanlı İddia Radarı
+5) Ortak Zemin / Köprü için kontrollü üretken AI + anlam doğrulama
+6) İsteğe bağlı canlı N'Sosyal veri adaptörü
+7) Kimlik doğrulama / çok kullanıcılı yapı
+
+NOT
+Bu ortamda gerçek Hugging Face model ağırlıklarıyla uzun CPU inference yeniden çalıştırılmadı.
+Regresyon testleri model çevresindeki iş mantığı, güvenlik ve UI/API sözleşmelerini doğrular.
+Gerçek model smoke testi kurulu Windows bilgisayarda yapılmalıdır.

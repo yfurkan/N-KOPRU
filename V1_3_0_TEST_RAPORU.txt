@@ -1,0 +1,40 @@
+N-KÖPRÜ v1.3.0 — TEST RAPORU
+Tarih: 2026-08-22
+
+SONUÇ
+- 30 test paketi çalıştırıldı.
+- 436/436 unittest başarılı.
+- 0 hata, 0 başarısız test.
+- v1.2.3'e kadar gelen 383 regresyon testinin tamamı geçti.
+- v1.3.0 için 53 yeni test eklendi ve tamamı geçti.
+
+YENİ TEST DAĞILIMI
+- Canlı tartışma backend/API akışı: 24/24
+- SQLite kalıcılık, eş zamanlı ekleme ve Bildirim Dedup: 13/13
+- Frontend/API/UI sözleşmesi: 16/16
+
+DOĞRULANAN ANA DAVRANIŞLAR
+- Demo, Keşfet ve özel tartışmaya yorum ekleme
+- Yorumun SQLite'ta ve yeniden açılışta korunması
+- Otomatik yeniden analiz ve snapshot kaydı
+- Gerçek yeni soru için yalnızca ilgili soru/kaynak bildirimi
+- Gerçek yeni yüksek öncelikli iddia için tek iddia bildirimi
+- Aynı soru ve aynı iddianın ikinci kez bildirim oluşturmaması
+- Silinen bildirimin geri üretilmemesi
+- Tekrar yorumun ham gönderide kalıp benzersiz analiz sayısını şişirmemesi
+- Eş zamanlı yorumlarda yorum kimliği çakışmaması ve veri kaybı olmaması
+- Profil, geçmiş, Mesajlar, Yer İmleri ve Listeler uçlarının çalışmayı sürdürmesi
+
+EK KONTROLLER
+- Python compileall: BAŞARILI
+- TypeScript tsc --noEmit: BAŞARILI
+- Next.js 15.4.6 optimize production build: BAŞARILI
+- Yanıt Koçu: 29/29 unittest + 552 ek senaryo kontrolü
+
+PAKET TEMİZLİĞİ
+- .venv yok
+- node_modules yok
+- .next yok
+- .env yok (.env.example güvenli örnek olarak var)
+- .db/.sqlite yok
+- __pycache__ ve .pyc yok

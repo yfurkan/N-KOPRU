@@ -1,0 +1,50 @@
+N-KÖPRÜ v1.1.2 TEST RAPORU
+========================================
+
+Toplam test betiği: 15
+Toplam unittest metodu: 203
+Başarılı: 203
+Başarısız: 0
+Hata: 0
+
+Test dağılımı:
+- Bookmarks regression: 11/11
+- Bookmarks UI contract: 10/10
+- Coach regression: 29/29
+- Explore regression: 12/12
+- Explore UI contract: 8/8
+- Lists regression: 15/15
+- Lists UI contract: 12/12
+- Messages regression: 10/10
+- Messages UI contract: 12/12
+- Notifications regression: 22/22
+- Notifications UI contract: 11/11
+- Semantic analysis regression: 20/20
+- Semantic analysis UI contract: 10/10
+- v1 persistence regression: 11/11
+- v1 profile UI contract: 10/10
+
+Yanıt Koçu ek senaryo kontrolü:
+- Bulk safety matrix: 96
+- Generated fuzz: 300
+- Irony matrix: 40
+- Balanced matrix: 12
+- Toplam: 552/552
+
+v1.1.2 hedef kontrolleri:
+- Aynı snapshot yeniden analiz edildiğinde yeni bildirim sayısı: 0 -> BAŞARILI
+- Yalnızca yeni iddia eklendiğinde sadece İddia bildirimi -> BAŞARILI
+- Aynı yeni olay içeriğinin tekrar bildirim üretmemesi -> BAŞARILI
+- Eski aynı kind/post/tab ailesi kopyalarının tek seferlik temizliği -> BAŞARILI
+- Silinen aynı olayın yeniden doğmaması -> BAŞARILI
+- Bildirim hedefinin doğru analiz adımına gitmesi -> BAŞARILI
+- Okundu / okunmadı / sil / okunanları temizle / geri al -> BAŞARILI
+- SQLite kalıcılık ve profil geçmiş regresyonu -> BAŞARILI
+
+Ek teknik kontroller:
+- Python compileall: BAŞARILI
+- page.tsx TS/TSX syntax-transpile: BAŞARILI
+- layout.tsx TS/TSX syntax-transpile: BAŞARILI
+- api.ts TS syntax-transpile: BAŞARILI
+- types.ts TS syntax-transpile: BAŞARILI
+- Tam tsc --noEmit: ÇALIŞTIRILMADI (kaynak pakette node_modules yok; tam tip kontrolü geçtiği iddia edilmez)

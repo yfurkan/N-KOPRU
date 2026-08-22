@@ -1,0 +1,37 @@
+N-KÖPRÜ v0.9.1 — LİSTELER HIZLI EKLE TEST RAPORU
+====================================================
+
+DÜZELTİLEN DAVRANIŞ
+- Listeler ekranı açıldığında aktif tartışmanın analiz sonucu bellekte yoksa analiz otomatik hazırlanıyor.
+- “Mevcut analizden ekle” alanı artık mevcut analiz varsa üç içerik türünü gösterebiliyor:
+  1) Tartışma
+  2) Doğrulanabilir iddia adayları (her biri ayrı)
+  3) Köprü sorusu
+- Analiz yükleniyor / hata / analiz gerekli / iddia yok / Köprü yok durumları açıkça gösteriliyor.
+- Hata durumunda “Tekrar Dene”, analiz yoksa “Analizi Hazırla” işlemi bulunuyor.
+- Aynı öğenin aynı listeye ikinci kez eklenmesini önleyen mevcut koruma korunuyor.
+- Ekleme ve çıkarma sonrasında liste ayrıntısı ve sayaçlar backend’den yeniden okunuyor.
+
+TEST SONUÇLARI
+1. Tüm backend regresyon testleri: 88/88 BAŞARILI
+2. Tüm frontend UI sözleşme testleri: 50/50 BAŞARILI
+3. Listeler backend testleri: 14/14 BAŞARILI
+4. Listeler UI sözleşme testleri: 12/12 BAŞARILI
+5. Python compileall: BAŞARILI
+6. TypeScript page/api/types syntax-transpile kontrolü: BAŞARILI
+
+ÖZEL v0.9.1 KONTROLLERİ
+- Demo tartışması heuristik analiz ile doğrulanabilir iddia adayları üretiyor: BAŞARILI
+- Analiz Köprü sorusu üretiyor: BAŞARILI
+- Tartışma + tüm iddia adayları + Köprü aynı listeye eklenebiliyor: BAŞARILI
+- Tartışma / İddia / Köprü sayaçları eklenen gerçek öğe sayısını yansıtıyor: BAŞARILI
+- Listeler navigasyonu eksik analiz kaynağını otomatik hazırlama işlevine bağlı: BAŞARILI
+- Aynı anda birden çok otomatik analiz çağrısını engelleyen ref kilidi mevcut: BAŞARILI
+- Analiz başarısız olursa tekrar deneme yolu mevcut: BAŞARILI
+- İddia veya Köprü bulunmayan analizler için yanıltıcı boş alan yerine açık durum mesajı gösteriliyor: BAŞARILI
+
+NOT
+Tam Next.js production build bu çalışma ortamında bağımlılık kurulumu sırasında konteynerin yeniden başlatılması nedeniyle çalıştırılmadı. Bunun yerine TSX/TS dosyaları TypeScript derleyicisinin transpile parser’ından hatasız geçirildi. Python tarafı ve statik UI sözleşme testlerinin tamamı çalıştırıldı.
+
+SONUÇ
+v0.9.1 kaynak paketi kullanıcı testine hazırdır.

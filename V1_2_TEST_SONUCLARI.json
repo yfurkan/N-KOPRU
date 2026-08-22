@@ -1,0 +1,17 @@
+{
+  "version": "1.2.0",
+  "successful": true,
+  "unittest_total": 236,
+  "unittest_passed": 236,
+  "new_question_tests": {
+    "semantic": 15,
+    "sqlite_snapshot_notification": 8,
+    "ui_contract": 10,
+    "total": 33
+  },
+  "coach_scenario_checks": 552,
+  "python_compileall": true,
+  "typescript_full_check": false,
+  "next_production_build": false,
+  "frontend_note": "npm ci çalışma ortamındaki ağ yetki sınırı nedeniyle tamamlanamadı; tam tsc ve production build başarısı iddia edilmez."
+}

@@ -1,0 +1,45 @@
+{
+  "version": "1.2.3",
+  "date": "2026-08-21",
+  "successful": true,
+  "suite_count": 27,
+  "tests_run": 383,
+  "failures": 0,
+  "errors": 0,
+  "prior_regression_tests": 330,
+  "new_tests": {
+    "analysis_consistency": 30,
+    "ui_contract": 12,
+    "sqlite_snapshot_notification_persistence": 11,
+    "total": 53
+  },
+  "coach_scenario_checks": 552,
+  "hybrid_demo": {
+    "unique_comments": 20,
+    "structural_decisions": 20,
+    "transformer_decisions": 0,
+    "stance_execution_mode": "structural-only",
+    "transformer_used": false,
+    "semantic_guardrail_count": 2,
+    "clusters": {
+      "Koşullu / Dengeli": { "comments": 10, "percentage": 50 },
+      "Karşı / Sınırlayıcı": { "comments": 2, "percentage": 10 },
+      "Destekleyen": { "comments": 4, "percentage": 20 },
+      "Soru / Tarafsız": { "comments": 4, "percentage": 20 }
+    },
+    "bridge_contrast_strategy": "policy-spectrum",
+    "bridge_contrast_viewpoint_count": 3,
+    "bridge_question_word_count": 24,
+    "maximum_bridge_question_words": 28,
+    "source_awareness_percentage": 25,
+    "open_evidence_question_ids": [6, 13],
+    "corrected_comment_ids": [7, 11]
+  },
+  "additional_checks": {
+    "python_compileall": "passed",
+    "frontend_types_ts_node_syntax": "passed",
+    "frontend_api_ts_node_syntax": "passed",
+    "typescript_full_typecheck": "not_run_frontend_dependencies_unavailable",
+    "next_production_build": "not_run_frontend_dependencies_unavailable"
+  }
+}

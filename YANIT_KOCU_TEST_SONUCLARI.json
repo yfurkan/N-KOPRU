@@ -1,0 +1,13 @@
+{
+  "version": "1.3.0",
+  "tests_run": 29,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "elapsed_seconds": 0.786,
+  "bulk_safety_matrix_cases": 96,
+  "generated_fuzz_cases": 300,
+  "irony_matrix_cases": 40,
+  "balanced_matrix_cases": 12,
+  "total_scenario_checks": 552
+}

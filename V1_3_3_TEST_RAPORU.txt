@@ -1,0 +1,25 @@
+N-KÖPRÜ v1.3.3 — DONANIMDAN BAĞIMSIZ İDDİA RADARI ÖNBELLEĞİ
+
+TAM REGRESYON: 700 / 700 test başarılı, 40 test paketi.
+
+YENİ v1.3.3 TESTLERİ: 128 / 128 başarılı.
+  - run_claim_cache_regression.py                 44 / 44
+  - run_claim_cache_evaluation_regression.py      36 / 36
+  - run_claim_cache_persistence_regression.py     20 / 20
+  - run_claim_cache_ui_contract.py                28 / 28
+
+KONTROL EDİLEN KOŞULLAR
+  * İlk model çıkarımı gerçek; aynı yorum ikinci kez çalıştırılmaz.
+  * Değişmeyen yorum yeniden kullanılır; yeni yorum tek başına değerlendirilir.
+  * Model, cihaz, başlık, yorum, etiket ve karar eşiği değişimlerinde cache
+    güvenli biçimde geçersiz kalır.
+  * En fazla 512 SHA-256 anahtarlı süreç-içi LRU kayıt tutulur.
+  * Paralel aynı istek tek model çıkarımı üretir.
+  * Bozuk, eksik ve geçersiz model cevapları cache'e yazılmaz.
+  * Beş gerçek demo çalıştırmasında 1 model çıkarımı + 4 cache isabeti.
+  * Soğuk/sıcak süre, önlenen çıkarım, gerçek katman süreleri doğrulanır.
+  * Eski v1.3.1/v1.3.2 SQLite teknik sonuçları kaybolmaz.
+  * Bildirim dedup, kullanıcı silme, snapshot, Profil, Mesajlar, Yer İmleri,
+    Listeler ve canlı yorum regresyonları korunur.
+  * %25 kaynak farkındalığı, iki açık soru ve 28 kelime Köprü sınırı korunur.
+  * Tam TypeScript typecheck ve Next.js production build başarılı.

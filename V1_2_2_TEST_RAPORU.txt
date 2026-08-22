@@ -1,0 +1,35 @@
+N-KÖPRÜ v1.2.2 — Görüş Tutarlılığı ve Kompakt Arayüz Test Raporu
+Tarih: 21.08.2026
+
+TOPLAM: 24 test paketi, 330 unittest, 0 hata, 0 başarısızlık.
+
+Önceki sürümlerden gelen regresyon testleri: 282/282 başarılı.
+Yeni görüş tutarlılığı regresyonu: 26/26 başarılı.
+Yeni kompakt Görüş Haritası arayüz sözleşmesi: 14/14 başarılı.
+Yeni SQLite/snapshot/bildirim kalıcılığı: 8/8 başarılı.
+Yanıt Koçu: 29/29 unittest + 552 ek senaryo kontrolü başarılı.
+
+Hibrit demo sınıflandırması:
+- Kontrollü ve kurallı kullanım: 10 yorum / %50.
+- Tam yasak veya güçlü sınırlama: 2 yorum / %10.
+- Yasağa karşı / kullanım alanlarını koruma: 4 yorum / %20.
+- Kanıt talebi / tarafsız değerlendirme: 4 yorum / %20.
+- Görüş motoru: 20 yapısal karar, 0 Transformer çıkarımı.
+- Anlamsal tutarlılık koruması: 2 yorum.
+- Yorum #7: Koşullu / Dengeli.
+- Yorum #11: Soru / Tarafsız.
+
+Korunan önceki davranış:
+- Demo kaynak farkındalığı: %25.
+- Kaynak/kanıt talebi soruları: #6 ve #13.
+- Köprü sorusu: en fazla 28 kelime.
+- Aynı analiz tekrarında yeni bildirim yok.
+- Kullanıcı tarafından silinen bildirim tekrar oluşturulmuyor.
+- Analiz geçmişi ve görüş kanıtları SQLite snapshot içinde korunuyor.
+- Mesajlar, Yer İmleri, Listeler, Bildirimler ve Profil API'leri 200 yanıtı veriyor.
+
+Ek kontroller:
+- Python compileall: başarılı.
+- frontend/lib/types.ts Node TypeScript sözdizimi: başarılı.
+- frontend/lib/api.ts Node TypeScript sözdizimi: başarılı.
+- Tam tsc --noEmit ve Next.js production build: frontend bağımlılıkları bu ortamda bulunmadığı için çalıştırılmadı.

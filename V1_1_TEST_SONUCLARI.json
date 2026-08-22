@@ -1,0 +1,101 @@
+{
+  "version": "1.1.0",
+  "test_methods": 192,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "elapsed_seconds": 13.568,
+  "coach_scenario_checks": 552,
+  "scripts": [
+    {
+      "script": "run_bookmarks_regression.py",
+      "tests": 11,
+      "ok": true,
+      "elapsed_seconds": 1.211
+    },
+    {
+      "script": "run_bookmarks_ui_contract.py",
+      "tests": 10,
+      "ok": true,
+      "elapsed_seconds": 0.594
+    },
+    {
+      "script": "run_coach_regression.py",
+      "tests": 29,
+      "ok": true,
+      "elapsed_seconds": 1.237
+    },
+    {
+      "script": "run_explore_regression.py",
+      "tests": 12,
+      "ok": true,
+      "elapsed_seconds": 1.25
+    },
+    {
+      "script": "run_explore_ui_contract.py",
+      "tests": 8,
+      "ok": true,
+      "elapsed_seconds": 0.582
+    },
+    {
+      "script": "run_lists_regression.py",
+      "tests": 15,
+      "ok": true,
+      "elapsed_seconds": 1.266
+    },
+    {
+      "script": "run_lists_ui_contract.py",
+      "tests": 12,
+      "ok": true,
+      "elapsed_seconds": 0.633
+    },
+    {
+      "script": "run_messages_regression.py",
+      "tests": 10,
+      "ok": true,
+      "elapsed_seconds": 1.073
+    },
+    {
+      "script": "run_messages_ui_contract.py",
+      "tests": 12,
+      "ok": true,
+      "elapsed_seconds": 0.597
+    },
+    {
+      "script": "run_notifications_regression.py",
+      "tests": 18,
+      "ok": true,
+      "elapsed_seconds": 1.404
+    },
+    {
+      "script": "run_notifications_ui_contract.py",
+      "tests": 10,
+      "ok": true,
+      "elapsed_seconds": 0.57
+    },
+    {
+      "script": "run_semantic_analysis_regression.py",
+      "tests": 16,
+      "ok": true,
+      "elapsed_seconds": 0.659
+    },
+    {
+      "script": "run_semantic_analysis_ui_contract.py",
+      "tests": 8,
+      "ok": true,
+      "elapsed_seconds": 0.568
+    },
+    {
+      "script": "run_v1_persistence_regression.py",
+      "tests": 11,
+      "ok": true,
+      "elapsed_seconds": 1.223
+    },
+    {
+      "script": "run_v1_profile_ui_contract.py",
+      "tests": 10,
+      "ok": true,
+      "elapsed_seconds": 0.703
+    }
+  ]
+}

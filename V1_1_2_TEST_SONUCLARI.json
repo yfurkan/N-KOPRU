@@ -1,0 +1,36 @@
+{
+  "version": "1.1.2",
+  "test_scripts": 15,
+  "tests_run": 203,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "suite_counts": {
+    "run_bookmarks_regression": 11,
+    "run_bookmarks_ui_contract": 10,
+    "run_coach_regression": 29,
+    "run_explore_regression": 12,
+    "run_explore_ui_contract": 8,
+    "run_lists_regression": 15,
+    "run_lists_ui_contract": 12,
+    "run_messages_regression": 10,
+    "run_messages_ui_contract": 12,
+    "run_notifications_regression": 22,
+    "run_notifications_ui_contract": 11,
+    "run_semantic_analysis_regression": 20,
+    "run_semantic_analysis_ui_contract": 10,
+    "run_v1_persistence_regression": 11,
+    "run_v1_profile_ui_contract": 10
+  },
+  "coach_scenario_checks": 552,
+  "target_checks": {
+    "unchanged_snapshot_notification_count": 0,
+    "new_claim_only_claim_notification": true,
+    "same_event_content_deduplicated": true,
+    "legacy_family_cleanup_once": true,
+    "deleted_event_suppressed": true,
+    "python_compileall": true,
+    "typescript_syntax_transpile": true,
+    "full_tsc_no_emit": false
+  }
+}

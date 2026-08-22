@@ -1,0 +1,20 @@
+N-KÖPRÜ v0.7.1 — MESAJLAR / TEK-TIK KÖPRÜ AÇMA TEST RAPORU
+
+Düzeltme:
+- “İlgili Köprü analizini aç” artık aynı tartışma bellekteyse yeniden API/AI çağrısı yapmadan tek tıkta anında açılır.
+- Farklı tartışmalarda ilk tıklama isteği başlatır; düğme “Köprü açılıyor…” durumuna geçer ve yinelenen tıklamalar engellenir.
+- Farklı tartışma gerektiğinde gönderi ve analiz paralel yüklenir.
+
+Testler:
+Mesajlar backend regresyonu: 10/10
+Mesajlar frontend sözleşme testi: 12/12
+Bildirimler backend regresyonu: 12/12
+Bildirimler frontend sözleşme testi: 8/8
+Keşfet backend regresyonu: 12/12
+Keşfet frontend sözleşme testi: 8/8
+Yanıt Koçu regresyonu: 29/29
+Yanıt Koçu senaryo kontrolü: 552
+Python modül derleme kontrolü: başarılı
+TypeScript sözdizimi kontrolü (page.tsx/api.ts/types.ts): başarılı
+
+Not: Kaynak ZIP node_modules içermez. Mevcut D:\NKOPRU kurulumundaki node_modules ile npm run dev kullanılabilir.

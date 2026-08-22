@@ -1,0 +1,103 @@
+{
+  "version": "1.0.0",
+  "status": "PASS",
+  "test_methods_total": 168,
+  "test_scripts_total": 13,
+  "failures": 0,
+  "errors": 0,
+  "suites": [
+    {
+      "script": "tests/run_bookmarks_regression.py",
+      "tests": 11,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_bookmarks_ui_contract.py",
+      "tests": 10,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_coach_regression.py",
+      "tests": 29,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_explore_regression.py",
+      "tests": 12,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_explore_ui_contract.py",
+      "tests": 8,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_lists_regression.py",
+      "tests": 15,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_lists_ui_contract.py",
+      "tests": 12,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_messages_regression.py",
+      "tests": 10,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_messages_ui_contract.py",
+      "tests": 12,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_notifications_regression.py",
+      "tests": 18,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_notifications_ui_contract.py",
+      "tests": 10,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_v1_persistence_regression.py",
+      "tests": 11,
+      "status": "PASS"
+    },
+    {
+      "script": "tests/run_v1_profile_ui_contract.py",
+      "tests": 10,
+      "status": "PASS"
+    }
+  ],
+  "coach_scenario_checks": 552,
+  "restart_persistence_probe": {
+    "status": "PASS",
+    "description": "Aynı SQLite dosyası iki ayrı Python işleminde açıldı; profil, yer imi ve analiz geçmişi ikinci işlemde korundu.",
+    "process2_expected": {
+      "display_name": "Restart User",
+      "bookmark_count": 1,
+      "history_count": 1
+    }
+  },
+  "snapshot_change_probe": {
+    "status": "PASS",
+    "description": "Aynı post_id için yorum eklenmiş ikinci snapshot; yorum artışı, yeni görüş/soru ve Köprü değişim notlarını üretti."
+  },
+  "python_compileall": "PASS",
+  "typescript_syntax_transpile": {
+    "status": "PASS",
+    "files": [
+      "frontend/app/page.tsx",
+      "frontend/app/layout.tsx",
+      "frontend/lib/api.ts",
+      "frontend/lib/types.ts"
+    ]
+  },
+  "full_typescript_typecheck": {
+    "status": "NOT_RUN",
+    "reason": "Test konteynerinde npm bağımlılık kurulumu zaman aşımına uğradı; eksik @types paketleri nedeniyle tam tsc sonucu iddia edilmemiştir."
+  }
+}

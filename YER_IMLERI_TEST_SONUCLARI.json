@@ -1,0 +1,17 @@
+{
+  "version": "0.8.0",
+  "module": "Yer İmleri",
+  "backend_regression": {"passed": 11, "total": 11},
+  "frontend_ui_contract": {"passed": 10, "total": 10},
+  "existing_modules": {
+    "explore": {"passed": 20, "total": 20},
+    "notifications": {"passed": 20, "total": 20},
+    "messages": {"passed": 22, "total": 22},
+    "coach": {"passed": 29, "total": 29, "scenario_checks": 552}
+  },
+  "python_compile": "passed",
+  "typescript_syntax_parse": "passed",
+  "total_test_methods": 112,
+  "failures": 0,
+  "errors": 0
+}

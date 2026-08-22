@@ -1,0 +1,17 @@
+{
+  "version": "0.9.1",
+  "lists_backend_tests": 14,
+  "lists_backend_passed": 14,
+  "lists_ui_tests": 12,
+  "lists_ui_passed": 12,
+  "all_backend_regression_tests": 88,
+  "all_backend_regression_passed": 88,
+  "all_ui_contract_tests": 50,
+  "all_ui_contract_passed": 50,
+  "python_compileall": true,
+  "typescript_syntax_transpile": true,
+  "current_analysis_quick_add_three_kinds": true,
+  "auto_prepare_missing_analysis": true,
+  "duplicate_guard_preserved": true,
+  "live_counters_preserved": true
+}

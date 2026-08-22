@@ -1,0 +1,65 @@
+{
+  "version": "0.9.2",
+  "test_files": 11,
+  "total_tests": 147,
+  "failures": 0,
+  "successful": true,
+  "details": [
+    {
+      "file": "tests/run_bookmarks_regression.py",
+      "tests": 11,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_bookmarks_ui_contract.py",
+      "tests": 10,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_coach_regression.py",
+      "tests": 29,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_explore_regression.py",
+      "tests": 12,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_explore_ui_contract.py",
+      "tests": 8,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_lists_regression.py",
+      "tests": 15,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_lists_ui_contract.py",
+      "tests": 12,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_messages_regression.py",
+      "tests": 10,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_messages_ui_contract.py",
+      "tests": 12,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_notifications_regression.py",
+      "tests": 18,
+      "returncode": 0
+    },
+    {
+      "file": "tests/run_notifications_ui_contract.py",
+      "tests": 10,
+      "returncode": 0
+    }
+  ],
+  "reply_coach_scenario_checks": 552
+}

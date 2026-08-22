@@ -1,0 +1,34 @@
+N-KÖPRÜ v1.1.1 TEST RAPORU
+==================================
+
+Regresyon/UI test betiği: 15
+Unittest: 198/198 başarılı
+Yanıt Koçu senaryo kontrolü: 552
+
+v1.1.1 hedef kontrolleri:
+- Demo Kaynak farkındalığı: %25 (5/20 benzersiz yorum)
+- Açık kaynak/veri talebi: 2
+- Demo Köprü sorusu: 21 kelime
+- Köprü soru üst sınırı: 28 kelime
+
+Betik dağılımı:
+- tests/run_bookmarks_regression.py: 11/11
+- tests/run_bookmarks_ui_contract.py: 10/10
+- tests/run_coach_regression.py: 29/29
+- tests/run_explore_regression.py: 12/12
+- tests/run_explore_ui_contract.py: 8/8
+- tests/run_lists_regression.py: 15/15
+- tests/run_lists_ui_contract.py: 12/12
+- tests/run_messages_regression.py: 10/10
+- tests/run_messages_ui_contract.py: 12/12
+- tests/run_notifications_regression.py: 18/18
+- tests/run_notifications_ui_contract.py: 10/10
+- tests/run_semantic_analysis_regression.py: 20/20
+- tests/run_semantic_analysis_ui_contract.py: 10/10
+- tests/run_v1_persistence_regression.py: 11/11
+- tests/run_v1_profile_ui_contract.py: 10/10
+
+Ek kontroller:
+- Python compileall: başarılı
+- TS/TSX syntax-transpile: başarılı
+- Tam tsc --noEmit: node_modules kaynak pakette olmadığı için çalıştırılmadı.

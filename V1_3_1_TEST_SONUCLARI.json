@@ -1,0 +1,39 @@
+{
+  "version": "1.3.1",
+  "date": "2026-08-22",
+  "successful": true,
+  "suite_count": 33,
+  "tests_run": 497,
+  "failures": 0,
+  "errors": 0,
+  "prior_regression_tests": 436,
+  "new_tests": {
+    "technical_evaluation_backend": 32,
+    "sqlite_isolation_persistence": 11,
+    "technical_evaluation_ui_contract": 18,
+    "total": 61
+  },
+  "technical_evaluation": {
+    "dataset_type": "small_manual_internal_validation_only",
+    "dataset_sample_count": 20,
+    "class_count": 4,
+    "samples_per_class": 5,
+    "external_benchmark": false,
+    "latency_default_iterations": 5,
+    "latency_measured_at_runtime": true,
+    "demo_invariant_count": 9,
+    "sqlite_latest_result_persistence": true,
+    "analysis_history_unchanged": true,
+    "notifications_unchanged": true,
+    "user_content_unchanged": true,
+    "does_not_auto_load_transformer": true,
+    "does_not_invent_model_confidence": true
+  },
+  "coach_scenario_checks": 552,
+  "additional_checks": {
+    "python_compileall": "passed",
+    "typescript_full_typecheck": "passed",
+    "next_production_build": "passed",
+    "next_version": "15.4.6"
+  }
+}

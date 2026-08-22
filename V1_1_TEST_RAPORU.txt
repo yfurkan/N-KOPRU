@@ -1,0 +1,23 @@
+N-KÖPRÜ v1.1.0 TEST RAPORU
+==================================
+Toplam unittest metodu: 192/192
+Başarısız: 0
+Hata: 0
+Yanıt Koçu ek senaryo kontrolü: 552
+Toplam test süresi: 13.568 sn
+
+PASS  run_bookmarks_regression.py: 11 test (1.211 sn)
+PASS  run_bookmarks_ui_contract.py: 10 test (0.594 sn)
+PASS  run_coach_regression.py: 29 test (1.237 sn)
+PASS  run_explore_regression.py: 12 test (1.25 sn)
+PASS  run_explore_ui_contract.py: 8 test (0.582 sn)
+PASS  run_lists_regression.py: 15 test (1.266 sn)
+PASS  run_lists_ui_contract.py: 12 test (0.633 sn)
+PASS  run_messages_regression.py: 10 test (1.073 sn)
+PASS  run_messages_ui_contract.py: 12 test (0.597 sn)
+PASS  run_notifications_regression.py: 18 test (1.404 sn)
+PASS  run_notifications_ui_contract.py: 10 test (0.57 sn)
+PASS  run_semantic_analysis_regression.py: 16 test (0.659 sn)
+PASS  run_semantic_analysis_ui_contract.py: 8 test (0.568 sn)
+PASS  run_v1_persistence_regression.py: 11 test (1.223 sn)
+PASS  run_v1_profile_ui_contract.py: 10 test (0.703 sn)

@@ -1,0 +1,46 @@
+N-KÖPRÜ v1.2.1 TEST RAPORU
+==========================
+
+Sürüm: 1.2.1
+Ana geliştirme: Açıklanabilir ve bağlama duyarlı Görüş Haritası
+
+SONUÇ
+-----
+282 / 282 unittest metodu başarılı.
+Yanıt Koçu 552 ek senaryo kontrolü başarılı.
+Python compileall başarılı.
+frontend/lib/types.ts ve frontend/lib/api.ts Node TypeScript sözdizimi kontrolü başarılı.
+
+YENİ V1.2.1 TESTLERİ
+--------------------
+- Görüş Haritası semantik regresyonu: 22 / 22
+- SQLite / snapshot / bildirim dedup: 10 / 10
+- Görüş Haritası UI contract: 14 / 14
+- Toplam yeni test: 46 / 46
+
+KAPSANAN DAVRANIŞLAR
+--------------------
+- eski canonical görüş kimliğinin korunması
+- yasaklama tartışmasında bağlama uygun görünür isim
+- genel tartışmada yapay yasak etiketi üretmeme
+- benzersiz yorum sayısı ve yüzde uyumu
+- yorum tekrarının küme sayısını şişirmemesi
+- temsilci yorum, yazar ve gerçek yorum kimliği
+- görüşe özgü ana gerekçe ve baskın tema
+- nötr grubu karşıt taraf gibi sunmama
+- karşıt görüş ve ortak zemin bağlantısı
+- ilgili iddia/soru yorumlarına geri bağlantı
+- yapısal karar ile Transformer kararının ayrılması
+- model güvenini bütün görüşün doğruluğu gibi sunmama
+- eski snapshot JSON'unun açılması
+- eski snapshot'tan yeni snapshot'a sahte görüş bildirimi oluşmaması
+- değişmeyen yeniden analizde bildirim dedup
+- silinen görüş bildiriminin yeniden üretilmemesi
+- gerçek backend process restart sonrası SQLite kalıcılığı
+- demo kaynak farkındalığı %25, #6/#13 soru ve 28 kelimelik Köprü sınırının korunması
+
+FRONTEND NOTU
+-------------
+UI contract ve .ts sözdizimi denetimleri başarılıdır. Bu ortamda node_modules
+bulunmadığı ve npm ağ yetkisi engellendiği için tam tsc --noEmit ve Next.js
+production build çalıştırılamamıştır; başarılı olduğu iddia edilmez.

@@ -1,0 +1,35 @@
+N-KÖPRÜ v1.3.1 - GERÇEK TEKNİK DOĞRULAMA
+Tarih: 22.08.2026
+
+GENEL SONUÇ
+- 33 unittest paketi: 497/497 başarılı.
+- Önceki v1.3.0 regresyonları: 436/436 başarılı.
+- Yeni backend ölçüm kontrolleri: 32/32.
+- Yeni SQLite, izolasyon ve kalıcılık kontrolleri: 11/11.
+- Yeni arayüz sözleşmesi kontrolleri: 18/18.
+- Yanıt Koçu: mevcut 29 test ve 552 senaryo kontrolü korunur.
+
+ÖLÇÜM DOĞRULAMASI
+- 20 elle etiketli Türkçe iç örnek, 4 görüş sınıfı, sınıf başına 5 örnek.
+- Doğruluk ve Macro-F1 gerçek çalışma çıktısından yeniden hesaplanıyor.
+- Sınıf bazlı precision, recall ve F1 değerleri ile karışıklık matrisi görünür.
+- 5 gerçek analiz tekrarı üzerinden medyan/P95/minimum/maksimum süre ölçülüyor.
+- 9 ürün davranışı kontrolü: 80 ham yorum, 20 benzersiz yorum, %25 kaynak
+  farkındalığı, 2 açık soru, 1 yüksek öncelikli iddia, <=28 kelimelik Köprü,
+  azınlık görüşü, #7 sınırlı kullanım ve #11 kaynak/veri eleştirisi.
+- Model yüklenmediyse yedek motorun gerçek hataları gizlenmiyor.
+- Model hazır olup yapısal karar yeterliyse uydurma model güveni gösterilmiyor.
+
+VERİ GÜVENLİĞİ
+- Teknik ölçüm snapshot oluşturmaz ve bildirim üretmez.
+- Kullanıcı profili, mesajlar, yer imleri, listeler ve özel tartışmalar korunur.
+- Son ölçüm SQLite app_meta tablosunda bağımsız olarak saklanır.
+
+EK KONTROLLER
+- Python compileall: BAŞARILI.
+- TypeScript tsc --noEmit: BAŞARILI.
+- Next.js optimize production build: BAŞARILI.
+
+DÜRÜSTLÜK NOTU
+İç doğrulama puanları yalnızca küçük proje içi senaryo setini temsil eder;
+bağımsız benchmark, akademik genelleme veya kullanıcı araştırması değildir.

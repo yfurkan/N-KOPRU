@@ -1,0 +1,16 @@
+N-KÖPRÜ v1.1.2 — Legacy Bildirim Migration Smoke Test
+======================================================
+
+Simülasyon:
+- Yeni SQLite DB oluşturuldu.
+- 3 seed + 5 ilk analiz bildirimi = 8 aktif kayıt.
+- Eski sürümden gelmiş gibi aynı otomatik ailelerde 5 ek kopya eklendi = 13 senaryosu.
+- v1.1.2 tek seferlik family cleanup çalıştırıldı.
+
+Sonuç:
+- Aktif otomatik aileler: analysis_ready=1, viewpoint_change=1, claim_alert=1, source_request=1, bridge_update=1
+- Aktif toplam: 5
+- Aynı demo tartışması değişiklik olmadan tekrar analiz edildi: 5 -> 5
+- Snapshot karşılaştırması: “Önceki analizden bu yana ölçülebilir bir değişiklik tespit edilmedi.”
+
+Sonuç: BAŞARILI

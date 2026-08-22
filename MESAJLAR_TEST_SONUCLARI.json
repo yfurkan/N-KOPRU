@@ -1,0 +1,47 @@
+{
+  "version": "0.7.1",
+  "module": "Mesajlar",
+  "fix": "single_click_bridge_open",
+  "backend_regression": {
+    "passed": 10,
+    "total": 10
+  },
+  "frontend_contract": {
+    "passed": 12,
+    "total": 12
+  },
+  "notification_regression": {
+    "passed": 12,
+    "total": 12
+  },
+  "notification_frontend_contract": {
+    "passed": 8,
+    "total": 8
+  },
+  "explore_regression": {
+    "passed": 12,
+    "total": 12
+  },
+  "explore_frontend_contract": {
+    "passed": 8,
+    "total": 8
+  },
+  "coach_regression": {
+    "passed": 29,
+    "total": 29,
+    "scenario_checks": 552
+  },
+  "python_compile": "passed",
+  "typescript_syntax": {
+    "page.tsx": "passed",
+    "api.ts": "passed",
+    "types.ts": "passed"
+  },
+  "bridge_navigation": {
+    "same_post_fast_path": "passed",
+    "duplicate_click_guard": "passed",
+    "opening_feedback": "passed",
+    "parallel_fetch_when_needed": "passed"
+  },
+  "next_build": "not_run_in_container_missing_node_modules"
+}

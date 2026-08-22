@@ -1,0 +1,53 @@
+{
+  "version": "1.4.0",
+  "test_summary": {
+    "total": 808,
+    "passed": 808,
+    "previous_regressions": 700,
+    "new_tests": 108,
+    "test_modules": 43,
+    "new_test_groups": {
+      "scenario_dataset_engine_metrics": 48,
+      "sqlite_persistence_and_product_isolation": 24,
+      "frontend_ui_contract": 36
+    }
+  },
+  "scenario_dataset": {
+    "sample_count": 80,
+    "scenario_count": 4,
+    "class_count": 4,
+    "samples_per_class": 20,
+    "samples_per_scenario": 20,
+    "easy_samples": 32,
+    "hard_samples": 48,
+    "topics": [
+      "Akademik yapay zekâ",
+      "Okulda telefon kullanımı",
+      "Kampüs gece ulaşımı",
+      "Uzaktan çalışma"
+    ],
+    "is_external_benchmark": false,
+    "contains_user_content": false
+  },
+  "controlled_mock_smoke_test": {
+    "reference_correct": 20,
+    "reference_total": 20,
+    "demo_invariants_passed": 9,
+    "demo_invariants_total": 9,
+    "claim_cache_hits": 4,
+    "claim_cache_misses": 1,
+    "scenario_correct": 74,
+    "scenario_total": 80,
+    "scenario_errors": 6,
+    "scenario_structural_decisions": 71,
+    "scenario_mock_model_inferences": 9,
+    "note": "Bu bölüm sabit kontrollü sahte modelle yapılan API smoke testidir; gerçek kullanıcı modeli veya bağımsız başarı sonucu değildir."
+  },
+  "checks": {
+    "python_compileall": "passed",
+    "typescript_typecheck": "passed",
+    "nextjs_production_build": "passed",
+    "sqlite_reference_and_scenario_results_are_separate": true,
+    "gpu_is_required": false
+  }
+}

@@ -1,0 +1,31 @@
+N-KÖPRÜ v0.8.0 — YER İMLERİ TEST RAPORU
+
+Yeni modül:
+- Backend regresyon: 11/11
+- Frontend UI sözleşmesi: 10/10
+
+Korunan modüller:
+- Keşfet: 12 backend + 8 UI = 20/20
+- Bildirimler: 12 backend + 8 UI = 20/20
+- Mesajlar: 10 backend + 12 UI = 22/22
+- Yanıt Koçu: 29/29; 552 senaryo kontrolü
+
+Ek kontroller:
+- backend/app Python compileall: başarılı
+- page.tsx / api.ts / types.ts TypeScript-TSX sözdizimi parse: başarılı
+
+Toplam test metodu: 112
+Hata: 0
+
+Yer İmleri davranışları doğrulandı:
+1. Boş liste düzgün açılıyor.
+2. Tartışma kaydı oluşturuluyor.
+3. İddia kaydı yorum numarasıyla saklanıyor.
+4. Köprü sorusu 8. adıma dönüş hedefiyle saklanıyor.
+5. Aynı kayıt ikinci kez çoğaltılmıyor.
+6. Tür filtreleri çalışıyor.
+7. Geçersiz tür ve filtre reddediliyor.
+8. Kayıt silinebiliyor.
+9. Bilinmeyen kayıt 404 dönüyor.
+10. Kayıt detayı okunabiliyor.
+11. Tartışma/İddia/Köprü hedef adımları 1/4/8 olarak korunuyor.

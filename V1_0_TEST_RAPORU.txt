@@ -1,0 +1,32 @@
+N-KÖPRÜ v1.0.0 — BİRLEŞİK TEST RAPORU
+====================================================
+
+Durum: PASS
+Test metodu: 168/168 başarılı
+Test betiği: 13/13 başarılı
+Yanıt Koçu ek senaryo kontrolü: 552
+
+TEST SETLERİ
+- tests/run_bookmarks_regression.py: 11/11 PASS
+- tests/run_bookmarks_ui_contract.py: 10/10 PASS
+- tests/run_coach_regression.py: 29/29 PASS
+- tests/run_explore_regression.py: 12/12 PASS
+- tests/run_explore_ui_contract.py: 8/8 PASS
+- tests/run_lists_regression.py: 15/15 PASS
+- tests/run_lists_ui_contract.py: 12/12 PASS
+- tests/run_messages_regression.py: 10/10 PASS
+- tests/run_messages_ui_contract.py: 12/12 PASS
+- tests/run_notifications_regression.py: 18/18 PASS
+- tests/run_notifications_ui_contract.py: 10/10 PASS
+- tests/run_v1_persistence_regression.py: 11/11 PASS
+- tests/run_v1_profile_ui_contract.py: 10/10 PASS
+
+EK DOĞRULAMALAR
+- Python compileall (backend/app + backend/tests): PASS
+- TS/TSX syntax-transpile (page.tsx, layout.tsx, api.ts, types.ts): PASS
+- İki ayrı Python işlemi ile SQLite restart kalıcılık probu: PASS
+- Aynı post için gerçek değişiklik içeren ikinci snapshot karşılaştırması: PASS
+
+NOT
+- Tam TypeScript typecheck bu konteynerde npm bağımlılık kurulumu zaman aşımına uğradığı için çalıştırılamadı; bu nedenle yalnızca gerçekten yapılan syntax/transpile kontrolü raporlanmıştır.
+- Kaynak paket node_modules, .venv, .next ve çalışma zamanı SQLite veritabanını içermez.

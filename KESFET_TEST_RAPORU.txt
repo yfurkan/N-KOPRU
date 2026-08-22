@@ -1,0 +1,52 @@
+N-KÖPRÜ v0.5.1 — KEŞFET MODÜLÜ TEST RAPORU
+================================================
+
+Sonuç: BAŞARILI
+
+Keşfet backend regresyon testleri: 12/12
+Keşfet frontend sözleşme kontrolleri: 8/8
+Yanıt Koçu regresyon testleri: 29/29
+Yanıt Koçu senaryo kontrolleri: 552
+TypeScript kaynak kontrolü: BAŞARILI
+
+Keşfet backend kapsamında doğrulananlar:
+- /health sürüm sözleşmesi: 0.5.1
+- 6 tartışmalı yerel kontrollü demo gündem kataloğu
+- 4 kategori ve kategori filtresi
+- Türkçe karakter toleranslı arama
+- Başlık/özet/etiket/yorum içeriğinde arama
+- Kategori + arama kesişimi
+- Filtreliyken tüm kategori seçeneklerinin korunması
+- Kartlardaki yorum sayıları ile açılan gönderi yorum sayılarının eşleşmesi
+- 6 tartışmanın tek tek yüklenmesi
+- 6 tartışmanın tek tek analiz edilmesi
+- Her analizde yorum sayısı ve Köprü sorusu üretimi
+- Geçersiz kimliklerde 404
+- Sonuçsuz aramada güvenli boş liste
+
+Keşfet frontend kapsamında doğrulananlar:
+- "Demo gündem aktif" etiketi; eski yanıltıcı "Yerel gündem aktif" metni yok
+- Sağ panelde dinamik Tartışma önizlemesi bağlantısı
+- İlk 4 gerçek yorumun önizlenmesi
+- Tartışmayı Aç + N-KÖPRÜ ile Analiz Et eylemleri
+- Filtreleri temizle ve sonuçsuz arama akışı
+- Filtrelenmiş konu/yorum sayaçları
+- Kartlarda klavye erişimi
+- Hızlı seçimlerde eski önizleme cevabını engelleyen yarış durumu koruması
+- Seçili kart ve önizleme stilleri
+
+Yanıt Koçu:
+- v0.4.4/v0.5 davranışları geriye dönük korundu
+- 29 regresyon testi ve toplam 552 senaryo kontrolü başarıyla geçti
+
+TypeScript kontrolü:
+- frontend/app/page.tsx
+- frontend/lib/api.ts
+- frontend/lib/types.ts
+kaynakları TypeScript derleyicisiyle sözdizim/tip çözümleme kontrolünden geçti.
+Bu çalışma paketinde node_modules bulunmadığı için tam Next.js production build burada
+çalıştırılmadı; paket mevcut D:\NKOPRU kurulumundaki node_modules ile kullanılmak içindir.
+
+Not: Keşfet verisi internetten canlı sosyal ağ verisi çekmez. Veriler kontrollü demo
+kataloğudur; arama, filtreleme, önizleme, tartışma açma ve analiz çağrıları gerçek
+frontend-backend API akışı üzerinden yapılır.

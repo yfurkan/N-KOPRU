@@ -1,0 +1,125 @@
+{
+  "version": "1.2.1",
+  "successful": true,
+  "total_tests": 282,
+  "previous_regression_tests": 236,
+  "new_viewpoint_tests": 46,
+  "viewpoint_semantic_tests": 22,
+  "viewpoint_persistence_tests": 10,
+  "viewpoint_ui_contract_tests": 14,
+  "coach_additional_scenario_checks": 552,
+  "python_compileall": "passed",
+  "typescript_source_syntax": {
+    "types_ts": "passed with node --check --experimental-strip-types",
+    "api_ts": "passed with node --check --experimental-strip-types"
+  },
+  "full_typescript_typecheck": "not run: frontend dependencies unavailable and npm network authorization blocked",
+  "next_production_build": "not run: frontend dependencies unavailable and npm network authorization blocked",
+  "suites": [
+    {
+      "suite": "run_bookmarks_regression.py",
+      "tests": 11,
+      "passed": true
+    },
+    {
+      "suite": "run_bookmarks_ui_contract.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_coach_regression.py",
+      "tests": 29,
+      "passed": true
+    },
+    {
+      "suite": "run_explore_regression.py",
+      "tests": 12,
+      "passed": true
+    },
+    {
+      "suite": "run_explore_ui_contract.py",
+      "tests": 8,
+      "passed": true
+    },
+    {
+      "suite": "run_lists_regression.py",
+      "tests": 15,
+      "passed": true
+    },
+    {
+      "suite": "run_lists_ui_contract.py",
+      "tests": 12,
+      "passed": true
+    },
+    {
+      "suite": "run_messages_regression.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_messages_ui_contract.py",
+      "tests": 12,
+      "passed": true
+    },
+    {
+      "suite": "run_notifications_regression.py",
+      "tests": 22,
+      "passed": true
+    },
+    {
+      "suite": "run_notifications_ui_contract.py",
+      "tests": 11,
+      "passed": true
+    },
+    {
+      "suite": "run_questions_persistence_regression.py",
+      "tests": 8,
+      "passed": true
+    },
+    {
+      "suite": "run_questions_regression.py",
+      "tests": 15,
+      "passed": true
+    },
+    {
+      "suite": "run_questions_ui_contract.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_semantic_analysis_regression.py",
+      "tests": 20,
+      "passed": true
+    },
+    {
+      "suite": "run_semantic_analysis_ui_contract.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_v1_persistence_regression.py",
+      "tests": 11,
+      "passed": true
+    },
+    {
+      "suite": "run_v1_profile_ui_contract.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_viewpoints_persistence_regression.py",
+      "tests": 10,
+      "passed": true
+    },
+    {
+      "suite": "run_viewpoints_regression.py",
+      "tests": 22,
+      "passed": true
+    },
+    {
+      "suite": "run_viewpoints_ui_contract.py",
+      "tests": 14,
+      "passed": true
+    }
+  ]
+}

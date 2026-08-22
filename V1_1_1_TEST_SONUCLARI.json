@@ -1,0 +1,93 @@
+{
+  "version": "1.1.1",
+  "test_scripts": 15,
+  "tests_run": 198,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "coach_scenario_checks": 552,
+  "breakdown": [
+    {
+      "script": "tests/run_bookmarks_regression.py",
+      "tests": 11,
+      "ok": true
+    },
+    {
+      "script": "tests/run_bookmarks_ui_contract.py",
+      "tests": 10,
+      "ok": true
+    },
+    {
+      "script": "tests/run_coach_regression.py",
+      "tests": 29,
+      "ok": true
+    },
+    {
+      "script": "tests/run_explore_regression.py",
+      "tests": 12,
+      "ok": true
+    },
+    {
+      "script": "tests/run_explore_ui_contract.py",
+      "tests": 8,
+      "ok": true
+    },
+    {
+      "script": "tests/run_lists_regression.py",
+      "tests": 15,
+      "ok": true
+    },
+    {
+      "script": "tests/run_lists_ui_contract.py",
+      "tests": 12,
+      "ok": true
+    },
+    {
+      "script": "tests/run_messages_regression.py",
+      "tests": 10,
+      "ok": true
+    },
+    {
+      "script": "tests/run_messages_ui_contract.py",
+      "tests": 12,
+      "ok": true
+    },
+    {
+      "script": "tests/run_notifications_regression.py",
+      "tests": 18,
+      "ok": true
+    },
+    {
+      "script": "tests/run_notifications_ui_contract.py",
+      "tests": 10,
+      "ok": true
+    },
+    {
+      "script": "tests/run_semantic_analysis_regression.py",
+      "tests": 20,
+      "ok": true
+    },
+    {
+      "script": "tests/run_semantic_analysis_ui_contract.py",
+      "tests": 10,
+      "ok": true
+    },
+    {
+      "script": "tests/run_v1_persistence_regression.py",
+      "tests": 11,
+      "ok": true
+    },
+    {
+      "script": "tests/run_v1_profile_ui_contract.py",
+      "tests": 10,
+      "ok": true
+    }
+  ],
+  "semantic_expectations": {
+    "demo_source_awareness_percent": 25,
+    "demo_source_awareness_comments": 5,
+    "demo_evidence_requests": 2,
+    "bridge_max_words": 28,
+    "demo_bridge_words": 21
+  }
+}

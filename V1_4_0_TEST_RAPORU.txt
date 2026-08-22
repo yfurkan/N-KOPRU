@@ -1,0 +1,34 @@
+N-KÖPRÜ v1.4.0 — ÇOK SENARYOLU TEKNİK DOĞRULAMA
+
+TAM REGRESYON: 808 / 808 başarılı (43 test paketi).
+ÖNCEKİ REGRESYONLAR: 700 / 700 başarılı.
+YENİ v1.4.0 TESTLERİ: 108 / 108 başarılı.
+
+  48 test: 80 etiketli örnek, dört dengeli konu, dört dengeli sınıf,
+           zorluk kırılımı, gerçek doğruluk/F1, gerçek hatalar,
+           model sayaçları ve konu-bağımsız Transformer etiketleri.
+  24 test: SQLite üzerinde ayrı sonuç, mevcut referansın korunması,
+           kullanıcı tartışması/bildirim/snapshot izolasyonu ve güvenli okuma.
+  36 test: ayrı çalıştırma düğmesi, konu/zorluk sonuçları, gerçek hata
+           listesi, ayrı kullanıcı tartışması ve tek satırlık logo.
+
+VERİ KAPSAMI:
+  Akademik yapay zekâ: 20 örnek.
+  Okulda telefon kullanımı: 20 örnek.
+  Kampüs gece ulaşımı: 20 örnek.
+  Uzaktan çalışma: 20 örnek.
+  Destekleyen: 20; Karşı/Sınırlayıcı: 20;
+  Koşullu/Dengeli: 20; Soru/Tarafsız: 20.
+  Temel: 32; zor/örtük: 48.
+
+DÜRÜSTLÜK SINIRI:
+  Proje içinde elle etiketlenmiş senaryolardır; bağımsız dış veri seti,
+  bilimsel genelleme veya gerçek kullanıcı performansı değildir.
+  Hatalı tahminler ve yedek motor sonuçları gizlenmez.
+
+EK KONTROLLER:
+  TypeScript typecheck: başarılı.
+  Python compileall: başarılı.
+  Next.js optimize production build: başarılı.
+  Demo 80 ham / 20 benzersiz; kaynak farkındalığı %25;
+  açık soru 2; Köprü sorusu ≤28 kelime; 9/9 değişmez korunur.

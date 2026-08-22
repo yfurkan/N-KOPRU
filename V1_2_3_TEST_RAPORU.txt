@@ -1,0 +1,38 @@
+N-KÖPRÜ v1.2.3 — Tutarlı Analiz Özeti ve Gerçek Görüş Ayrışması
+Tarih: 21.08.2026
+
+TOPLAM: 27 test paketi, 383 unittest, 0 hata, 0 başarısızlık.
+
+Önceki sürümlerden gelen regresyonlar: 330/330 başarılı.
+Yeni analiz tutarlılığı testleri: 30/30 başarılı.
+Yeni arayüz sözleşmesi testleri: 12/12 başarılı.
+Yeni SQLite/snapshot/bildirim testleri: 11/11 başarılı.
+Yanıt Koçu: 29/29 unittest + 552 ek senaryo kontrolü.
+
+Doğrulanan hibrit demo:
+- 20 benzersiz yorum.
+- 20 yapısal karar, 0 Transformer çıkarımı.
+- Özet gerçek yürütme yöntemini doğru belirtir.
+- Ana karar yaklaşımları: kontrollü %50; kullanım alanlarını koruma %20; tam yasak %10.
+- Kanıt/tarafsız küme: %20; karar tarafı gibi gösterilmez.
+- Köprü karşılaştırması: tam yasak + kontrollü kullanım + kullanım alanlarını koruma.
+- Köprü sorusu: 24 kelime; üst sınır 28 kelime.
+- Köprü kanıtlarında yasakçı kümeden gerçek yorum ve #6 kaynak sorusu bulunur.
+- Soru #6/#13 etki açıklamalarında kullanıcıya görünen görüş başlıkları yer alır.
+- Kaynak farkındalığı: %25.
+- #7: kontrollü kullanım; #11: kanıt/tarafsız değerlendirme.
+
+Kalıcılık ve bildirim:
+- Özet, soru etki metni ve üç Köprü görüş etiketi SQLite snapshot üzerinden geri açılır.
+- Eski snapshot'larda yeni alanlar yoksa açılış devam eder.
+- Sadece sunum metni değişikliği bildirim üretmez.
+- Gerçek Köprü sorusu yükseltmesi bir defalık bildirim oluşturabilir.
+- Değişmeyen yeniden analiz yeni bildirim üretmez.
+- Kullanıcının sildiği Köprü bildirimi geri gelmez.
+- Mesajlar, Yer İmleri, Listeler ve Profil çalışır.
+
+Ek kontroller:
+- Python compileall: başarılı.
+- frontend/lib/types.ts Node TypeScript sözdizimi: başarılı.
+- frontend/lib/api.ts Node TypeScript sözdizimi: başarılı.
+- Tam tsc --noEmit ve Next.js production build: frontend bağımlılıkları bu ortamda bulunmadığı için çalıştırılmadı.
