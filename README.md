@@ -18,7 +18,7 @@ konuşmaları susturmak değil; anlayışı ve nitelikli etkileşimi büyütmekt
 > başarısı veya gerçek kullanıcı performansı olarak yorumlanmamalıdır.
 
 **Teslim sürümü:** `v1.4.0` ·
-**Sabit teslim etiketi:** [`v1.4.0-teknofest`](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest)
+**Sabit TEKNOFEST teslimi:** [`v1.4.0-teknofest-final`](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest-final)
 
 ![N-KÖPRÜ v1.4.0 çalışan uygulama: tartışma akışı ve sekiz adımlı analiz paneli](docs/screenshots/analysis-panel.webp)
 
@@ -217,7 +217,7 @@ Doğrudan teslim kanıtları:
 - [v1.4.0 test raporu](docs/test-reports/V1_4_0_TEST_RAPORU.txt)
 - [v1.4.0 makine okunabilir test sonuçları](docs/test-reports/V1_4_0_TEST_SONUCLARI.json)
 - [v1.4.0 sürüm notları](docs/release-notes/V1_4_0_RELEASE_NOTES.md)
-- [Değişmeyen TEKNOFEST teslim etiketi](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest)
+- [Sabit TEKNOFEST teslim dalı](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest-final)
 
 ## Veri güvenliği ve ölçüm sınırları
 
