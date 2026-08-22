@@ -1,0 +1,43 @@
+# Python sanal ortamları ve çalışma çıktıları
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Next.js ve Node.js bağımlılıkları/derleme çıktıları
+node_modules
+node_modules/
+.next
+.next/
+out/
+*.tsbuildinfo
+
+# Gizli yapılandırmalar, anahtarlar ve sertifikalar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# SQLite veritabanları ve kullanıcıya ait kalıcı veriler
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Yerel model/önbellek çıktıları
+.cache/
+hf_cache/
+
+# İşletim sistemi ve editör dosyaları
+.DS_Store
+Thumbs.db
+.idea/
