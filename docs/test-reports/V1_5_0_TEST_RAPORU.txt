@@ -2,7 +2,7 @@ N-KÖPRÜ v1.5.0 FINALIST TEST RAPORU
 Tarih: 2026-09-05
 Dal: finalist-v1.5.0
 Yerel doğrulama commit'i: e57b2e3
-GitHub finalist commit'i: daa4b10314f90a0766600f38dfca2d1d3c0ed8ce
+GitHub finalist dalı: `finalist-v1.5.0` (kaynak ve CI doğrulaması sürdürülüyor)
 
 1. Backend tam regresyon
 

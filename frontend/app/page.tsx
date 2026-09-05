@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 53333)
-Total output lines: 3776
-
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1769,7 +1766,223 @@ function PilotWorkspace() {
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     if (session?.current_phase) phaseStartedAt.current = window.performance.now();
-  }, [session?.current_phase?.phase_ind…3333 tokens truncated….length}</b> tartışma</span>
+  }, [session?.current_phase?.phase_index]);
+
+  async function begin() {
+    if (!consent || submitting) return;
+    setSubmitting(true); setError(''); setFeedback('');
+    try {
+      const created = await startPilotSession(consent, practice);
+      setSession(created);
+      setSelectedAnswer(null); setClarity(0); setConfidence(0);
+      phaseStartedAt.current = window.performance.now();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Pilot başlatılamadı'); }
+    finally { setSubmitting(false); }
+  }
+
+  async function completePhase() {
+    const phase = session?.current_phase;
+    if (!session || !phase || selectedAnswer == null || clarity === 0 || confidence === 0 || submitting) {
+      setError('Yanıtı, açıklık puanını ve karar güvenini tamamla.');
+      return;
+    }
+    setSubmitting(true); setError(''); setFeedback('');
+    try {
+      const duration = Math.max(1000, Math.round(window.performance.now() - phaseStartedAt.current));
+      const response = await submitPilotPhase(session.session_id, {
+        phase_index: phase.phase_index,
+        selected_answer: selectedAnswer,
+        duration_ms: duration,
+        clarity_rating: clarity,
+        confidence_rating: confidence,
+      });
+      setSession(response.session);
+      setSelectedAnswer(null); setClarity(0); setConfidence(0);
+      setFeedback(response.session.completed ? 'İki görev de kaydedildi. Katılım tamamlandı; teşekkürler.' : 'İlk görev kaydedildi. Şimdi diğer görünüme geçiliyor.');
+      if (response.session.completed) await refresh();
+      else phaseStartedAt.current = window.performance.now();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Pilot görevi kaydedilemedi'); }
+    finally { setSubmitting(false); }
+  }
+
+  async function exportResults() {
+    setError('');
+    try {
+      const blob = await downloadPilotResults();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'nkopru-pilot-results.csv';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Sonuçlar indirilemedi'); }
+  }
+
+  const phase = session?.current_phase ?? null;
+  return (
+    <div className='pilotWorkspace'>
+      <div className='workspaceHero pilotHero'>
+        <div><span className='eyebrow'>ETKİ DOĞRULAMA · KARŞI DENGELENMİŞ A/B</span><h2>N-KÖPRÜ kullanıcı pilotu</h2><p>Ham yorum okuma ile N-KÖPRÜ görünümünü süre, doğru ana ayrışma tespiti, açıklık ve karar güveni üzerinden karşılaştırır.</p></div>
+        <span className='pilotProtocol'>Protokol {overview?.protocol_version ?? '1.0'}</span>
+      </div>
+      {error && <div className='errorBox' role='alert'>{error}</div>}
+      {feedback && <div className='liveCommentFeedback success' role='status'>{feedback}</div>}
+
+      <div className='pilotMetrics'>
+        <div><strong>{overview?.completed_session_count ?? 0}</strong><span>Gerçek katılımcı</span><small>Hedef 8–12</small></div>
+        <div><strong>{overview?.raw.median_duration_ms == null ? '—' : formatDuration(overview.raw.median_duration_ms)}</strong><span>Ham görünüm medyanı</span><small>{overview?.raw.completed_task_count ?? 0} görev</small></div>
+        <div><strong>{overview?.nkopru.median_duration_ms == null ? '—' : formatDuration(overview.nkopru.median_duration_ms)}</strong><span>N-KÖPRÜ medyanı</span><small>{overview?.nkopru.completed_task_count ?? 0} görev</small></div>
+        <div><strong>{overview?.time_gain_percent == null ? '—' : `%${overview.time_gain_percent}`}</strong><span>Gözlenen süre farkı</span><small>N-KÖPRÜ lehine pozitif</small></div>
+        <div><strong>{overview?.accuracy_gain_points == null ? '—' : `${overview.accuracy_gain_points} puan`}</strong><span>Doğruluk farkı</span><small>N-KÖPRÜ − ham</small></div>
+        <div><strong>{overview?.clarity_gain == null ? '—' : overview.clarity_gain}</strong><span>Açıklık farkı</span><small>5 üzerinden</small></div>
+      </div>
+
+      {!session ? (
+        <section className='pilotStartCard'>
+          <div><span className='eyebrow'>YENİ OTURUM</span><h3>İki kısa görevi başlat</h3><p>Her katılımcı iki eşdeğer konuyu farklı görünümle inceler. AB/BA sırası otomatik dönüşür; isim veya e-posta alınmaz.</p></div>
+          <label className='consentRow'><input type='checkbox' checked={consent} onChange={event => setConsent(event.target.checked)} /><span>Görev süresi ve 1–5 değerlendirmelerimin anonim olarak kaydedilmesini kabul ediyorum.</span></label>
+          <label className='practiceRow'><input type='checkbox' checked={practice} onChange={event => setPractice(event.target.checked)} /><span>Deneme oturumu — sonuç metriklerine katma</span></label>
+          <button className='primary noMargin' disabled={!consent || submitting} onClick={() => void begin()}>{submitting ? 'Oturum hazırlanıyor…' : practice ? 'Deneme Oturumunu Başlat' : 'Gerçek Pilot Oturumunu Başlat'}</button>
+        </section>
+      ) : session.completed ? (
+        <section className='pilotCompleteCard'>
+          <span>✓</span><div><h3>Katılım tamamlandı</h3><p>{session.participant_code} kodlu {session.practice ? 'deneme' : 'gerçek'} oturumunun iki görevi de kaydedildi.</p><button className='primary noMargin' onClick={() => { setSession(null); setConsent(false); setFeedback(''); }}>Yeni Katılımcı</button></div>
+        </section>
+      ) : phase ? (
+        <section className='pilotTaskCard'>
+          <div className='pilotTaskHeader'><div><span className='eyebrow'>GÖREV {phase.phase_index + 1}/2 · {session.participant_code}</span><h3>{phase.title}</h3><p>{phase.instructions}</p></div><span className={phase.variant === 'nkopru' ? 'pilotVariantNkopru' : 'pilotVariantRaw'}>{phase.variant === 'nkopru' ? 'N-KÖPRÜ' : 'HAM YORUMLAR'}</span></div>
+          {session.practice && <div className='pilotPracticeBanner'>Deneme modu: bu oturum sonuçlara katılmayacak.</div>}
+          {phase.variant === 'raw' ? (
+            <div className='pilotRawComments'>{phase.comments.map((text,index) => <div key={`${phase.scenario_key}-${index}`}><b>Katılımcı {index + 1}</b><p>{text}</p></div>)}</div>
+          ) : phase.analysis ? (
+            <div className='pilotAnalysisView'>
+              <div className='pilotAnalysisSummary'><span>Tartışmayı Anla</span><p>{phase.analysis.short_summary}</p></div>
+              <div className='pilotViewpoints'>{phase.analysis.viewpoints.map(item => <div key={item.name}><b>{item.name}</b><strong>%{item.percentage}</strong><small>{item.comment_count} yorum</small></div>)}</div>
+              <div className='pilotBridge'><span>Asıl ayrışma</span><p>{phase.analysis.main_divergence}</p><span>Köprü sorusu</span><p>{phase.analysis.bridge_question}</p></div>
+            </div>
+          ) : null}
+          <fieldset className='pilotQuestion'>
+            <legend>{phase.question}</legend>
+            {phase.choices.map((choice,index) => <label key={choice} className={selectedAnswer === index ? 'pilotChoiceSelected' : ''}><input type='radio' name='pilot-answer' checked={selectedAnswer === index} onChange={() => setSelectedAnswer(index)} /><span>{choice}</span></label>)}
+          </fieldset>
+          <div className='pilotRatings'>
+            <label><span>Bu görünüm ne kadar açıktı?</span><select value={clarity} onChange={event => setClarity(Number(event.target.value))}><option value={0}>Puan seç</option>{[1,2,3,4,5].map(value => <option value={value} key={value}>{value} / 5</option>)}</select></label>
+            <label><span>Yanıtından ne kadar eminsin?</span><select value={confidence} onChange={event => setConfidence(Number(event.target.value))}><option value={0}>Puan seç</option>{[1,2,3,4,5].map(value => <option value={value} key={value}>{value} / 5</option>)}</select></label>
+          </div>
+          <button className='primary noMargin' onClick={() => void completePhase()} disabled={submitting || selectedAnswer == null || clarity === 0 || confidence === 0}>{submitting ? 'Kaydediliyor…' : phase.phase_index === 0 ? 'Kaydet ve İkinci Göreve Geç' : 'Pilotu Tamamla'}</button>
+        </section>
+      ) : null}
+
+      <section className={`pilotConclusion ${overview?.minimum_sample_reached ? 'sampleReady' : ''}`}>
+        <div><b>{overview?.minimum_sample_reached ? 'Asgari örneklem tamamlandı' : 'Sonuç henüz oluşturulmadı'}</b><p>{overview?.conclusion ?? 'Pilot özeti yükleniyor…'}</p><small>{overview?.integrity_note}</small></div>
+        <div className='pilotExportActions'><button className='ghost' onClick={() => void refresh()} disabled={loading}>Sonuçları Yenile</button><button className='ghost' onClick={() => void exportResults()} disabled={!overview?.completed_session_count}>CSV Kanıtını İndir</button></div>
+      </section>
+    </div>
+  );
+}
+
+function PilotPanel() {
+  return (
+    <>
+      <div className='panelHeader'><div><span className='eyebrow'>ÖLÇÜM DÜRÜSTLÜĞÜ</span><h2>Etki iddiası veriyle oluşur</h2></div><span className='status'>A/B</span></div>
+      <div className='pilotPanelStack'>
+        <div className='moduleCard pilotMethodCard'><h3>Neden karşı dengeli?</h3><p>Katılımcıların yarısı A konusunu ham, B konusunu N-KÖPRÜ ile; diğer yarısı ters sırayla görür. Böylece konu ve sıra etkisi azaltılır.</p></div>
+        <div className='moduleCard pilotMethodCard'><h3>Toplanan veriler</h3><span>Görev tamamlama süresi</span><span>Ana ayrışmayı doğru seçme</span><span>1–5 açıklık değerlendirmesi</span><span>1–5 karar güveni</span></div>
+        <div className='moduleCard pilotPrivacyCard'><h3>Veri minimizasyonu</h3><p>İsim, e-posta, telefon, demografi veya serbest metin toplanmaz. Rastgele oturum kodu yalnız iki görevi eşleştirir.</p></div>
+        <div className='moduleCard pilotMethodCard'><h3>Sunumda doğru ifade</h3><p>Asgari örneklem oluşmadan “etki kanıtlandı” denmez. Tamamlandıktan sonra sonuçlar proje içi betimsel kullanıcı pilotu olarak sunulur.</p></div>
+      </div>
+    </>
+  );
+}
+
+
+function ExploreWorkspace({
+  onOpenTopic,
+  onPreviewTopic,
+  onClearPreview,
+  selectedTopicId,
+}:{
+  onOpenTopic:(topicId:number, analyzeNow?:boolean)=>Promise<void>;
+  onPreviewTopic:(topic:ExploreTopic)=>Promise<void>;
+  onClearPreview:()=>void;
+  selectedTopicId:number | null;
+}) {
+  const [topics, setTopics] = useState<ExploreTopic[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [category, setCategory] = useState('Tümü');
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [openingId, setOpeningId] = useState<number | null>(null);
+  const hasFilters = category !== 'Tümü' || query.trim().length > 0;
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setLoading(true); setError('');
+      try {
+        const data = await getExploreTopics(category, query);
+        if (!active) return;
+        setTopics(data.topics);
+        setCategories(data.categories);
+        if (data.topics.length === 0) {
+          onClearPreview();
+        } else if (!data.topics.some(topic => topic.id === selectedTopicId)) {
+          void onPreviewTopic(data.topics[0]);
+        }
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : 'Keşfet gündemi yüklenemedi');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }, query ? 220 : 0);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [category, query, onClearPreview, onPreviewTopic, selectedTopicId]);
+
+  async function open(topicId:number, analyzeNow=false) {
+    setOpeningId(topicId);
+    try { await onOpenTopic(topicId, analyzeNow); }
+    finally { setOpeningId(null); }
+  }
+
+  function clearFilters() {
+    setCategory('Tümü');
+    setQuery('');
+  }
+
+  return (
+    <div className='navWorkspace exploreWorkspace'>
+      <div className='workspaceHero exploreHero'>
+        <div>
+          <span className='eyebrow'>N-KÖPRÜ • KEŞFET</span>
+          <h2>Keşfet</h2>
+          <p>Gündemdeki tartışmaları ara, konuya göre filtrele ve tek tıkla N-KÖPRÜ analizine taşı.</p>
+        </div>
+        <span className='liveDataChip'>● Demo gündem aktif</span>
+      </div>
+
+      <div className='exploreControls'>
+        <div className='exploreSearchWrap'>
+          <span>⌕</span>
+          <input
+            className='exploreSearch'
+            placeholder='Tartışma, konu veya etiket ara…'
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && <button className='clearSearch' onClick={() => setQuery('')} aria-label='Aramayı temizle'>×</button>}
+        </div>
+        <div className='categoryStrip'>
+          {['Tümü', ...categories].map(item => (
+            <button key={item} className={category === item ? 'categoryActive' : ''} onClick={() => setCategory(item)}>{item}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className='exploreStats'>
+        <span><b>{topics.length}</b> tartışma</span>
         <span><b>{topics.reduce((sum,t) => sum + t.comment_count, 0)}</b> yorum</span>
         {category !== 'Tümü' && <span><b>{category}</b></span>}
         {query.trim() && <span>Arama: <b>“{query.trim()}”</b></span>}
