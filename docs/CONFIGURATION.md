@@ -8,12 +8,13 @@ gerektiğinde kullanılmalıdır.
 
 | Ortam değişkeni | Varsayılan | Açıklama |
 |---|---|---|
-| `N_KOPRU_AI_MODEL` | `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` | Hibrit görüş ve belirsiz iddia analizinde kullanılan Transformer modeli |
+| `N_KOPRU_STANCE_MODEL` | `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` | Hibrit görüş ve belirsiz iddia analizinde kullanılan Transformer modeli |
 | `N_KOPRU_AI_BATCH_SIZE` | `4` | Uygun olduğunda işlenecek model çıkarımı grup boyutu |
 | `N_KOPRU_COACH_MODEL` | `Qwen/Qwen2.5-0.5B-Instruct` | İsteğe bağlı Yanıt Koçu üretken modeli |
 | `N_KOPRU_COACH_MAX_NEW_TOKENS` | `48` | Yanıt Koçu için azami yeni token sayısı |
 | `N_KOPRU_COACH_FAST_PATH` | `1` | Yüksek güvenli durumlarda hızlı yapısal yanıt yolunu kullanır |
 | `N_KOPRU_DB_PATH` | Uygulamanın yerel SQLite yolu | Kalıcı veritabanı dosyasının açık konumu |
+| `N_KOPRU_CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Virgülle ayrılmış izinli frontend origin'leri |
 
 PowerShell örneği:
 
@@ -32,6 +33,15 @@ uvicorn app.main:app --reload --port 8000
 Backend bu değerleri çalışan sürecin ortamından okur. Yerel bir `.env`
 dosyası oluşturulursa içeriğin ilgili terminal ortamına ayrıca aktarılması
 gerekebilir; gizli bilgiler hiçbir zaman depoya eklenmemelidir.
+
+Sunum veya dağıtım ortamında CORS adresini açıkça sınırlandırın:
+
+```powershell
+$env:N_KOPRU_CORS_ORIGINS = "https://sunum.example.org"
+uvicorn app.main:app --port 8000
+```
+
+`*` ile tüm origin'leri açmak, kimlik bilgileri açıkken önerilmez.
 
 ## Frontend
 

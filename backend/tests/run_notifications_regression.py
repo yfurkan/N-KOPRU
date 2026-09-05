@@ -24,7 +24,7 @@ class NotificationRegression(unittest.TestCase):
     def test_01_health_version(self):
         r = self.client.get('/health')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['version'], '1.4.0')
+        self.assertEqual(r.json()['version'], '1.5.0')
 
     def test_02_seed_notifications_are_available(self):
         data = self.client.get('/api/notifications').json()

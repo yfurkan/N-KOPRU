@@ -1,5 +1,8 @@
+import os
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from .demo import DEMO_POST
 from .explore import categories as explore_categories, get_post as get_explore_post, list_topics as list_explore_topics
@@ -12,7 +15,10 @@ from .bookmarks import count_bookmarks, create_bookmark, delete_bookmark, get_bo
 from .lists import add_entry as add_list_entry, count_lists, create_list, delete_entry as delete_list_entry, delete_list, get_list, list_lists
 from .history import allocate_custom_post_id, append_post_comment, get_custom_post, get_history, history_count, list_history, record_analysis_snapshot, save_custom_post
 from .profile import get_profile, update_profile
-from .evaluation import get_technical_status, run_scenario_evaluation, run_technical_evaluation
+from .evaluation import get_technical_status, run_holdout_evaluation, run_scenario_evaluation, run_technical_evaluation
+from .pilot import export_csv as export_pilot_csv, get_overview as get_pilot_overview, get_session as get_pilot_session, start_session as start_pilot_session, submit_phase as submit_pilot_phase
+from .readiness import get_system_readiness
+from .version import APP_VERSION
 from .models import (
     AnalysisResult,
     Post,
@@ -46,17 +52,26 @@ from .models import (
     ProfileUpdateRequest,
     TechnicalEvaluationRequest,
     ScenarioEvaluationRequest,
+    SystemReadinessResponse,
+    PilotOverviewResponse,
+    PilotSessionStartRequest,
+    PilotSessionResponse,
+    PilotPhaseSubmitRequest,
+    PilotPhaseSubmitResponse,
 )
 
 app = FastAPI(
     title='N-KÖPRÜ API',
-    version='1.4.0',
+    version=APP_VERSION,
     description='Yapay Zekâ Destekli Sosyal Tartışma Zekâsı Sistemi — hibrit AI yerel çalışma API’si',
 )
 
+_default_origins = 'http://localhost:3000,http://127.0.0.1:3000'
+_cors_origins = [item.strip() for item in os.getenv('N_KOPRU_CORS_ORIGINS', _default_origins).split(',') if item.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000', 'http://127.0.0.1:3000'],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -65,7 +80,59 @@ app.add_middleware(
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'project': 'N-KÖPRÜ', 'version': '1.4.0', 'storage': 'sqlite'}
+    return {'status': 'ok', 'project': 'N-KÖPRÜ', 'version': APP_VERSION, 'storage': 'sqlite'}
+
+
+@app.get('/api/system/readiness', response_model=SystemReadinessResponse)
+def system_readiness():
+    return get_system_readiness()
+
+
+@app.get('/api/pilot', response_model=PilotOverviewResponse)
+def pilot_overview():
+    return get_pilot_overview()
+
+
+@app.post('/api/pilot/sessions', response_model=PilotSessionResponse)
+def pilot_session_start(req: PilotSessionStartRequest):
+    try:
+        return start_pilot_session(consent=req.consent, practice=req.practice)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get('/api/pilot/sessions/{session_id}', response_model=PilotSessionResponse)
+def pilot_session_get(session_id: int):
+    session = get_pilot_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail='Pilot oturumu bulunamadı')
+    return session
+
+
+@app.post('/api/pilot/sessions/{session_id}/phases', response_model=PilotPhaseSubmitResponse)
+def pilot_phase_submit(session_id: int, req: PilotPhaseSubmitRequest):
+    try:
+        return submit_pilot_phase(
+            session_id,
+            phase_index=req.phase_index,
+            selected_answer=req.selected_answer,
+            duration_ms=req.duration_ms,
+            clarity_rating=req.clarity_rating,
+            confidence_rating=req.confidence_rating,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc).strip("'")) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get('/api/pilot/results.csv')
+def pilot_results_csv():
+    return Response(
+        content=export_pilot_csv(),
+        media_type='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename="nkopru-pilot-results.csv"'},
+    )
 
 
 @app.get('/api/ai/status', response_model=AIStatus)
@@ -103,6 +170,14 @@ def technical_evaluation_run(req: TechnicalEvaluationRequest):
 @app.post('/api/evaluation/scenarios/run')
 def technical_scenario_evaluation_run(req: ScenarioEvaluationRequest):
     return run_scenario_evaluation(use_ai=req.use_ai)
+
+
+@app.post('/api/evaluation/holdout/run')
+def technical_holdout_evaluation_run(req: ScenarioEvaluationRequest):
+    try:
+        return run_holdout_evaluation(use_ai=req.use_ai)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 

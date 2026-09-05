@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 
-os.environ.setdefault('N_KOPRU_DB_PATH', '/tmp/nkopru_v140_scenario_persistence.db')
+os.environ.setdefault('N_KOPRU_DB_PATH', '/tmp/nkopru_v141_scenario_persistence.db')
 
 from fastapi.testclient import TestClient
 

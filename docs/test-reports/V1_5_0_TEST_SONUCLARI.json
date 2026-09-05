@@ -1,0 +1,34 @@
+{
+  "version": "1.5.0",
+  "date": "2026-09-05",
+  "branch": "finalist-v1.5.0",
+  "backend": {
+    "test_packages": 54,
+    "tests_run": 1232,
+    "tests_passed": 1232,
+    "tests_failed": 0,
+    "command": "python -m unittest discover -s tests -p 'run_*.py' -v"
+  },
+  "frontend": {
+    "typescript": "passed",
+    "production_build": "passed",
+    "next_version": "15.5.25",
+    "production_audit_vulnerabilities": 0
+  },
+  "api_smoke": {
+    "checks": 12,
+    "passed": 12,
+    "failed": 0,
+    "readiness": "ready",
+    "demo_raw_comments": 80,
+    "demo_unique_comments": 20,
+    "bridge_word_count": 21,
+    "cors_preflight_status": 200
+  },
+  "pilot": {
+    "real_completed_sessions": 0,
+    "minimum_sample": 8,
+    "note": "Pilot altyapısı doğrulandı; gerçek kullanıcı etkisi sonucu henüz yoktur."
+  },
+  "integrity_note": "Teknik proje içi kontroller bağımsız akademik benchmark veya toplum geneli başarı iddiası değildir."
+}

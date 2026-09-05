@@ -304,7 +304,7 @@ class CoachRegression(unittest.TestCase):
         client = TestClient(app)
         health = client.get('/health')
         self.assertEqual(health.status_code, 200)
-        self.assertEqual(health.json()['version'], '1.4.0')
+        self.assertEqual(health.json()['version'], '1.5.0')
 
         res = client.post('/api/rewrite', json={
             'text': 'Beynini evde unutmuşsun, konuyu baştan oku da tekrar yanıt ver.',
@@ -591,7 +591,7 @@ def main() -> int:
     elapsed = time.perf_counter() - start
 
     summary = {
-        'version': '1.4.0',
+        'version': '1.5.0',
         'tests_run': result.testsRun,
         'failures': len(result.failures),
         'errors': len(result.errors),

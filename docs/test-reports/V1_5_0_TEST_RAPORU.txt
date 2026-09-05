@@ -1,0 +1,37 @@
+N-KÖPRÜ v1.5.0 FINALIST TEST RAPORU
+Tarih: 2026-09-05
+Dal: finalist-v1.5.0
+Temel commit: be07967
+
+1. Backend tam regresyon
+
+Komut: python -m unittest discover -s tests -p 'run_*.py' -v
+Sonuç: 54 test paketi, 1.232 / 1.232 BAŞARILI
+
+Kapsam:
+- v1.4.0/v1.4.1/v1.4.2 davranış ve kalıcılık kontrolleri
+- konu bağlamı ve 28 kelimelik Köprü sınırı
+- Sunum Modu, hazırlık endpoint'i ve Etki Pilotu API'si
+- anonim AB/BA ataması, onay, faz sırası, idempotency, CSV ve minimum örneklem
+- mobil/erişilebilir arayüz sözleşmesi
+
+2. Frontend kalite kapısı
+
+- npx tsc --noEmit: BAŞARILI
+- npm run build: BAŞARILI (Next.js 15.5.25)
+- npm audit --omit=dev --json: 0 güvenlik açığı
+- Python compileall: BAŞARILI
+
+3. API kabul dumanı
+
+Sonuç: 12 / 12 BAŞARILI
+
+Kontroller: health v1.5.0, sistem hazırlığı, 80 ham/20 benzersiz demo,
+demo analiz ve 28 kelime sınırı, özel tartışma, canlı yorum, pilot başlangıç,
+iki pilot fazı, CSV dışa aktarımı ve localhost CORS preflight.
+
+4. Dürüstlük sınırı
+
+Bu rapor yazılım kalite ve akış doğrulamasıdır. Gerçek kullanıcı pilotu henüz
+çalıştırılmadığı için kullanıcı etkisi sonucu, genelleme veya nedensel başarı
+iddiası içermez. Pilot ekranı gerçek katılımcı oturumlarına hazırdır.

@@ -1,6 +1,6 @@
 {
   "name": "n-kopru-frontend",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "15.4.6",
+    "next": "15.5.25",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },
@@ -17,5 +17,9 @@
     "@types/react": "19.1.10",
     "@types/react-dom": "19.1.7",
     "typescript": "5.9.2"
+  },
+  "overrides": {
+    "postcss": "8.5.28",
+    "sharp": "0.35.4"
   }
 }

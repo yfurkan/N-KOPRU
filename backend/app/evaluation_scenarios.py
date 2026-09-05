@@ -159,6 +159,11 @@ SCENARIO_LIMITATION = (
     'etiketli Türkçe cümleyle sınırlıdır. Bağımsız dış veri seti, akademik '
     'benchmark, gerçek kullanıcı başarısı veya bilimsel genelleme değildir.'
 )
+SCENARIO_CALIBRATION_NOTE = (
+    'Önceki proje içi sınıflandırma hataları konu-bağımsız dil kurallarını '
+    'iyileştirmek için incelenmiştir. Bu nedenle aynı 80 örnekte elde edilen '
+    'sonuç bağımsız tutma testi veya dış benchmark olarak yorumlanamaz.'
+)
 
 
 def scenario_dataset_info() -> dict:
@@ -191,4 +196,5 @@ def scenario_dataset_info() -> dict:
         'is_external_benchmark': False,
         'contains_user_content': False,
         'limitation': SCENARIO_LIMITATION,
+        'calibration_note': SCENARIO_CALIBRATION_NOTE,
     }

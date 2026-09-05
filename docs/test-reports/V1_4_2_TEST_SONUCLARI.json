@@ -1,0 +1,61 @@
+{
+  "version": "1.4.2",
+  "unchanged_submission_tag": "v1.4.0-teknofest-final",
+  "github_modified": false,
+  "test_packages": 50,
+  "previous_regression_tests": 980,
+  "new_regression_tests": 184,
+  "tests_run": 1164,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "new_test_packages": {
+    "run_topic_context_regression.py": 51,
+    "run_holdout_evaluation_regression.py": 51,
+    "run_holdout_persistence_regression.py": 38,
+    "run_topic_holdout_ui_contract.py": 44
+  },
+  "separate_project_internal_control": {
+    "sample_count": 80,
+    "scenario_count": 5,
+    "label_count": 4,
+    "samples_per_label": 20,
+    "basic_case_count": 40,
+    "challenging_case_count": 40,
+    "calibration_sample_overlap_count": 0,
+    "calibration_topic_overlap_count": 0,
+    "frozen_sha256": "1b4e8cb55023d1a1b99e32a2029ff3fd5c0a00f55dd79be6fb937453011fbdcf",
+    "fallback_execution": {
+      "correct_count": 70,
+      "error_count": 10,
+      "accuracy": 0.875,
+      "macro_f1": 0.9018,
+      "structural_decision_count": 80,
+      "transformer_inference_count": 0,
+      "errors_are_visible": true,
+      "topics": {
+        "Mahalle parkı erişimi": { "correct": 14, "total": 16 },
+        "Okul kantini beslenmesi": { "correct": 14, "total": 16 },
+        "Kentte geri dönüşüm": { "correct": 14, "total": 16 },
+        "Halk kütüphanesi erişimi": { "correct": 14, "total": 16 },
+        "Çocuklarda dijital oyun": { "correct": 14, "total": 16 }
+      }
+    },
+    "model_loaded_result_may_vary": true,
+    "new_errors_used_for_rule_tuning": false,
+    "is_external_benchmark": false,
+    "is_scientific_generalization": false,
+    "contains_user_content": false
+  },
+  "frontend": {
+    "typescript_no_emit": "passed",
+    "nextjs_production_build": "passed"
+  },
+  "preserved_demo_invariants": {
+    "source_awareness_percent": 25,
+    "open_question_comment_ids": [6, 13],
+    "maximum_bridge_question_words": 28,
+    "canonical_viewpoint_names_preserved": true
+  },
+  "hardware_specific_dependency": false
+}

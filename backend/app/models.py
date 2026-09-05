@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Literal
 
 
 class Comment(BaseModel):
@@ -422,3 +422,97 @@ class TechnicalEvaluationRequest(BaseModel):
 
 class ScenarioEvaluationRequest(BaseModel):
     use_ai: bool = True
+
+
+class ReadinessCheck(BaseModel):
+    key: str
+    label: str
+    status: Literal['ready', 'optional', 'warning', 'failed']
+    detail: str
+    required: bool = True
+
+
+class SystemReadinessResponse(BaseModel):
+    version: str
+    checked_at: str
+    status: Literal['ready', 'degraded', 'failed']
+    presentation_ready: bool
+    required_ready_count: int
+    required_check_count: int
+    checks: List[ReadinessCheck]
+    note: str
+
+
+class PilotSessionStartRequest(BaseModel):
+    consent: bool
+    practice: bool = True
+
+
+class PilotPhaseSubmitRequest(BaseModel):
+    phase_index: int = Field(ge=0, le=1)
+    selected_answer: int = Field(ge=0, le=3)
+    duration_ms: int = Field(ge=1000, le=1_800_000)
+    clarity_rating: int = Field(ge=1, le=5)
+    confidence_rating: int = Field(ge=1, le=5)
+
+
+class PilotPhase(BaseModel):
+    phase_index: int
+    variant: Literal['raw', 'nkopru']
+    scenario_key: str
+    title: str
+    instructions: str
+    question: str
+    choices: List[str]
+    comments: List[str]
+    analysis: dict | None = None
+
+
+class PilotSessionResponse(BaseModel):
+    session_id: int
+    participant_code: str
+    practice: bool
+    assignment: str
+    completed_phase_count: int
+    completed: bool
+    current_phase: PilotPhase | None = None
+
+
+class PilotPhaseResult(BaseModel):
+    phase_index: int
+    variant: Literal['raw', 'nkopru']
+    scenario_key: str
+    correct: bool
+    duration_ms: int
+    clarity_rating: int
+    confidence_rating: int
+
+
+class PilotPhaseSubmitResponse(BaseModel):
+    result: PilotPhaseResult
+    session: PilotSessionResponse
+
+
+class PilotVariantMetrics(BaseModel):
+    variant: Literal['raw', 'nkopru']
+    completed_task_count: int = 0
+    median_duration_ms: float | None = None
+    accuracy_percent: float | None = None
+    average_clarity: float | None = None
+    average_confidence: float | None = None
+
+
+class PilotOverviewResponse(BaseModel):
+    protocol_version: str
+    recommended_participants: str
+    completed_session_count: int
+    active_session_count: int
+    practice_session_count: int
+    minimum_sample_reached: bool
+    raw: PilotVariantMetrics
+    nkopru: PilotVariantMetrics
+    time_gain_percent: float | None = None
+    accuracy_gain_points: float | None = None
+    clarity_gain: float | None = None
+    conclusion: str
+    integrity_note: str

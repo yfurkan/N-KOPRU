@@ -172,6 +172,35 @@ def initialize_schema() -> None:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS pilot_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                participant_code TEXT NOT NULL UNIQUE,
+                assignment TEXT NOT NULL,
+                practice INTEGER NOT NULL DEFAULT 1,
+                consented_at TEXT NOT NULL,
+                completed_at TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_pilot_sessions_completed
+                ON pilot_sessions(practice, completed_at);
+
+            CREATE TABLE IF NOT EXISTS pilot_phase_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                phase_index INTEGER NOT NULL,
+                variant TEXT NOT NULL,
+                scenario_key TEXT NOT NULL,
+                selected_answer INTEGER NOT NULL,
+                correct INTEGER NOT NULL,
+                duration_ms INTEGER NOT NULL,
+                clarity_rating INTEGER NOT NULL,
+                confidence_rating INTEGER NOT NULL,
+                completed_at TEXT NOT NULL,
+                FOREIGN KEY(session_id) REFERENCES pilot_sessions(id) ON DELETE CASCADE,
+                UNIQUE(session_id, phase_index)
+            );
+            CREATE INDEX IF NOT EXISTS idx_pilot_results_variant
+                ON pilot_phase_results(variant, completed_at);
             '''
         )
         conn.commit()
@@ -197,10 +226,15 @@ def reset_database_for_tests() -> None:
         for table in (
             'messages', 'conversations', 'notifications', 'bookmarks',
             'topic_list_entries', 'topic_lists', 'analysis_history',
-            'custom_posts', 'profiles', 'app_meta',
+            'custom_posts', 'profiles', 'pilot_phase_results',
+            'pilot_sessions', 'app_meta',
         ):
             conn.execute(f'DELETE FROM {table}')
-        conn.execute("DELETE FROM sqlite_sequence WHERE name IN ('notifications','messages','bookmarks','topic_lists','topic_list_entries','analysis_history')")
+        conn.execute(
+            "DELETE FROM sqlite_sequence WHERE name IN "
+            "('notifications','messages','bookmarks','topic_lists','topic_list_entries',"
+            "'analysis_history','pilot_sessions','pilot_phase_results')"
+        )
 
 
 initialize_schema()

@@ -1,4 +1,4 @@
-import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryResponse, BookmarkActionResponse, BookmarkKind, BookmarkResponse, CommentAppendResult, ConversationDetail, ConversationListResponse, ExploreResponse, MessageItem, NotificationActionResponse, NotificationResponse, Post, ProfileResponse, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicListActionResponse, TopicListDetail, TopicListResponse } from './types';
+import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryResponse, BookmarkActionResponse, BookmarkKind, BookmarkResponse, CommentAppendResult, ConversationDetail, ConversationListResponse, ExploreResponse, MessageItem, NotificationActionResponse, NotificationResponse, PilotOverview, PilotSession, PilotPhaseResult, Post, ProfileResponse, SystemReadiness, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicListActionResponse, TopicListDetail, TopicListResponse } from './types';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -54,6 +54,19 @@ export async function runScenarioEvaluation(useAI = true): Promise<TechnicalScen
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
     throw new Error(detail?.detail ?? 'Çok senaryolu doğrulama çalıştırılamadı');
+  }
+  return res.json();
+}
+
+export async function runHoldoutEvaluation(useAI = true): Promise<TechnicalScenarioEvaluation> {
+  const res = await fetch(`${API}/api/evaluation/holdout/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ use_ai: useAI }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Ayrılmış yeni iç kontrol çalıştırılamadı');
   }
   return res.json();
 }
@@ -345,4 +358,54 @@ export async function updateProfile(payload: { display_name: string; handle: str
     throw new Error(detail?.detail ?? 'Profil güncellenemedi');
   }
   return res.json();
+}
+
+export async function getSystemReadiness(): Promise<SystemReadiness> {
+  const res = await fetch(`${API}/api/system/readiness`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Sunum hazırlık denetimi çalıştırılamadı');
+  return res.json();
+}
+
+export async function getPilotOverview(): Promise<PilotOverview> {
+  const res = await fetch(`${API}/api/pilot`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Etki pilotu sonuçları yüklenemedi');
+  return res.json();
+}
+
+export async function startPilotSession(consent: boolean, practice: boolean): Promise<PilotSession> {
+  const res = await fetch(`${API}/api/pilot/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ consent, practice }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Pilot oturumu başlatılamadı');
+  }
+  return res.json();
+}
+
+export async function submitPilotPhase(sessionId: number, payload: {
+  phase_index: number;
+  selected_answer: number;
+  duration_ms: number;
+  clarity_rating: number;
+  confidence_rating: number;
+}): Promise<{ result: PilotPhaseResult; session: PilotSession }> {
+  const res = await fetch(`${API}/api/pilot/sessions/${sessionId}/phases`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Pilot görevi kaydedilemedi');
+  }
+  return res.json();
+}
+
+export async function downloadPilotResults(): Promise<Blob> {
+  const res = await fetch(`${API}/api/pilot/results.csv`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Pilot sonuçları dışa aktarılamadı');
+  return res.blob();
 }

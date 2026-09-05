@@ -35,7 +35,7 @@ class AnalysisConsistencyPersistence(unittest.TestCase):
 
     def test_01_health_reports_v123_and_sqlite(self):
         data = self.client.get('/health').json()
-        self.assertEqual(data['version'], '1.4.0')
+        self.assertEqual(data['version'], '1.5.0')
         self.assertEqual(data['storage'], 'sqlite')
 
     def test_02_truthful_hybrid_summary_survives_snapshot_reopen(self):

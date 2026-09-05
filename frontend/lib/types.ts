@@ -367,6 +367,13 @@ export type TechnicalScenarioDataset = {
   is_external_benchmark: boolean;
   contains_user_content: boolean;
   limitation: string;
+  calibration_note?: string;
+  dataset_role?: string;
+  calibration_dataset_version?: string;
+  calibration_sample_overlap_count?: number;
+  calibration_topic_overlap_count?: number;
+  is_disjoint_from_calibration?: boolean;
+  frozen_sha256?: string;
 };
 
 export type TechnicalScenarioPrediction = TechnicalPrediction & {
@@ -404,6 +411,7 @@ export type TechnicalScenarioOutcome = {
   errors: TechnicalScenarioPrediction[];
   structural_decision_count: number;
   transformer_inference_count: number;
+  semantic_guardrail_count?: number;
   elapsed_ms: number;
   engine_mode: string;
 };
@@ -431,6 +439,7 @@ export type TechnicalScenarioEvaluation = {
   label_distribution: Record<string, number>;
   structural_decision_count: number;
   transformer_inference_count: number;
+  semantic_guardrail_count?: number;
   elapsed_ms: number;
   requested_ai: boolean;
   effective_ai: boolean;
@@ -445,10 +454,12 @@ export type TechnicalStatus = {
   storage: string;
   dataset: TechnicalDataset;
   scenario_dataset: TechnicalScenarioDataset;
+  holdout_dataset?: TechnicalScenarioDataset;
   model_status: AIStatus;
   hardware: TechnicalHardware;
   latest_result: TechnicalEvaluation | null;
   latest_scenario_result: TechnicalScenarioEvaluation | null;
+  latest_holdout_result?: TechnicalScenarioEvaluation | null;
 };
 
 export type Analysis = {
@@ -648,4 +659,91 @@ export type ProfileResponse = {
   user: ProfileUser;
   stats: ProfileStats;
   recent_analyses: AnalysisHistoryItem[];
+};
+
+export type ReadinessCheck = {
+  key: string;
+  label: string;
+  status: 'ready' | 'optional' | 'warning' | 'failed';
+  detail: string;
+  required: boolean;
+};
+
+export type SystemReadiness = {
+  version: string;
+  checked_at: string;
+  status: 'ready' | 'degraded' | 'failed';
+  presentation_ready: boolean;
+  required_ready_count: number;
+  required_check_count: number;
+  checks: ReadinessCheck[];
+  note: string;
+};
+
+export type PilotAnalysis = {
+  short_summary: string;
+  common_ground: string;
+  main_divergence: string;
+  bridge_question: string;
+  viewpoints: Array<{ name: string; percentage: number; comment_count: number }>;
+  claim_count: number;
+  open_question_count: number;
+  engine: string;
+};
+
+export type PilotPhase = {
+  phase_index: number;
+  variant: 'raw' | 'nkopru';
+  scenario_key: string;
+  title: string;
+  instructions: string;
+  question: string;
+  choices: string[];
+  comments: string[];
+  analysis: PilotAnalysis | null;
+};
+
+export type PilotSession = {
+  session_id: number;
+  participant_code: string;
+  practice: boolean;
+  assignment: string;
+  completed_phase_count: number;
+  completed: boolean;
+  current_phase: PilotPhase | null;
+};
+
+export type PilotPhaseResult = {
+  phase_index: number;
+  variant: 'raw' | 'nkopru';
+  scenario_key: string;
+  correct: boolean;
+  duration_ms: number;
+  clarity_rating: number;
+  confidence_rating: number;
+};
+
+export type PilotVariantMetrics = {
+  variant: 'raw' | 'nkopru';
+  completed_task_count: number;
+  median_duration_ms: number | null;
+  accuracy_percent: number | null;
+  average_clarity: number | null;
+  average_confidence: number | null;
+};
+
+export type PilotOverview = {
+  protocol_version: string;
+  recommended_participants: string;
+  completed_session_count: number;
+  active_session_count: number;
+  practice_session_count: number;
+  minimum_sample_reached: boolean;
+  raw: PilotVariantMetrics;
+  nkopru: PilotVariantMetrics;
+  time_gain_percent: number | null;
+  accuracy_gain_points: number | null;
+  clarity_gain: number | null;
+  conclusion: string;
+  integrity_note: string;
 };

@@ -357,8 +357,16 @@ def _theme_matches(text: str) -> list[str]:
     return [theme for theme, words in THEMES.items() if any(word in lower for word in words)]
 
 
-def build_common_ground(comments: list[Comment], stance_details: list[StanceDetail], claims: list[ClaimItem]) -> tuple[list[CommonGroundItem], dict]:
+def build_common_ground(
+    comments: list[Comment],
+    stance_details: list[StanceDetail],
+    claims: list[ClaimItem],
+    title: str = '',
+) -> tuple[list[CommonGroundItem], dict]:
     started = time.perf_counter()
+    from .topic_context import resolve_topic_context
+
+    topic = resolve_topic_context(title) if title else None
     stance_by_id = {item.comment_id: item.label for item in stance_details}
     theme_comments: dict[str, list[int]] = defaultdict(list)
     theme_stances: dict[str, set[str]] = defaultdict(set)
@@ -379,11 +387,20 @@ def build_common_ground(comments: list[Comment], stance_details: list[StanceDeta
         if theme == 'Şeffaflık ve kaynak kullanımı':
             text = 'Farklı görüş kümeleri, iddiaların şeffaf biçimde açıklanması ve gerektiğinde kaynak/kanıtla desteklenmesi ihtiyacında kesişiyor.'
         elif theme == 'Kurallı ve bağlama duyarlı kullanım':
-            text = 'Farklı görüş kümelerinde, yapay zekâ kullanımının bağlama göre açık kurallar ve sınırlarla değerlendirilmesi ortak bir tema olarak görünüyor.'
+            text = (
+                f'Farklı görüş kümelerinde, {topic.subject if topic and topic.is_specific else "yapay zekâ kullanımı"} '
+                'için açık koşullar ve sınırların konuşulması ortak bir tema olarak görünüyor.'
+            )
         elif theme == 'Öğrenme etkisinin ölçülmesi':
-            text = 'Karşıt görüşler bile kararın öğrenme ve başarı üzerindeki gerçek etkilerinin ölçülmesi gerektiği noktasında kesişen sinyaller taşıyor.'
+            text = (
+                f'Karşıt görüşler, {topic.subject if topic and topic.is_specific else "kararın"} '
+                'gerçek etkilerinin açık ölçütlerle değerlendirilmesi gerektiği noktasında kesişen sinyaller taşıyor.'
+            )
         else:
-            text = 'Farklı görüş kümeleri, yalnızca yasak/serbest ikiliği yerine kullanıcıların yapay zekâyı nasıl kullanacağını öğrenmesinin önemli olduğu temasında buluşuyor.'
+            text = (
+                f'Farklı görüş kümeleri, {topic.subject if topic and topic.is_specific else "uygulamanın"} '
+                'nasıl işleyeceğinin anlaşılır rehberlik ve ortak kurallarla desteklenmesi temasında buluşuyor.'
+            )
         candidates.append(CommonGroundItem(
             theme=theme,
             text=text,
@@ -409,6 +426,30 @@ def build_common_ground(comments: list[Comment], stance_details: list[StanceDeta
                 evidence_comment_ids=ids,
                 confidence=0.68,
                 engine='İddia–kaynak talebi çapraz sinyali',
+            ))
+
+    # Konusu tanınan tartışmalarda yalnızca genel bir "ortak ölçüt" cümlesi
+    # göstermek yerine, kararın hangi somut boyutlarla değerlendirileceğini açıklar.
+    # Bu kayıt bir içerik uzlaşısı iddia etmez; farklı kümelerden seçilen yorumlarla
+    # desteklenen ortak değerlendirme çerçevesidir.
+    if topic is not None and topic.is_specific and topic.common_ground_text:
+        evidence_ids: list[int] = []
+        seen_stances: set[str] = set()
+        for comment in comments:
+            stance = stance_by_id.get(comment.id, 'Diğer / Nötr')
+            if stance in seen_stances:
+                continue
+            seen_stances.add(stance)
+            evidence_ids.append(comment.id)
+        if len(seen_stances) >= 2:
+            candidates.append(CommonGroundItem(
+                theme=f'{topic.subject.capitalize()} karar ölçütleri',
+                text=topic.common_ground_text,
+                support_count=len(evidence_ids),
+                stance_count=len(seen_stances),
+                evidence_comment_ids=evidence_ids[:8],
+                confidence=min(0.86, round(0.54 + 0.06 * len(seen_stances), 3)),
+                engine='Konu bağlamı + görüş kümeleri arası değerlendirme',
             ))
 
     if not candidates:
@@ -468,7 +509,15 @@ def _select_divergence_labels(title: str, viewpoints) -> tuple[list[str], bool, 
     return ordered[:2], restricted, 'substantive-opposition' if len(ordered) >= 2 else 'single-position'
 
 
-def _divergence_text(labels: list[str], restriction_context: bool = True) -> str:
+def _divergence_text(
+    labels: list[str],
+    restriction_context: bool = True,
+    topic=None,
+) -> str:
+    if topic is not None:
+        contextual = topic.contrast(labels)
+        if contextual:
+            return f'{contextual.capitalize()} yaklaşımları arasında ayrışma var.'
     positions = set(labels)
     if {'Destekleyen', 'Karşı / Sınırlayıcı', 'Koşullu / Dengeli'} <= positions:
         if restriction_context:
@@ -493,7 +542,15 @@ def _divergence_text(labels: list[str], restriction_context: bool = True) -> str
     return 'Belirgin görüş ayrılığı sınırlı; karar ölçütlerinin netleştirilmesi gerekiyor.'
 
 
-def _bridge_contrast(labels: list[str], restriction_context: bool = True) -> str:
+def _bridge_contrast(
+    labels: list[str],
+    restriction_context: bool = True,
+    topic=None,
+) -> str:
+    if topic is not None:
+        contextual = topic.contrast(labels)
+        if contextual:
+            return contextual
     positions = set(labels)
     if {'Destekleyen', 'Karşı / Sınırlayıcı', 'Koşullu / Dengeli'} <= positions:
         if restriction_context:
@@ -533,9 +590,12 @@ def build_bridge(
     claims: list[ClaimItem],
 ) -> tuple[dict, dict]:
     started = time.perf_counter()
+    from .topic_context import resolve_topic_context
+
+    topic = resolve_topic_context(title)
     labels, restricted, contrast_strategy = _select_divergence_labels(title, viewpoints)
     display_names = {item.name: getattr(item, 'display_name', '') or item.name for item in viewpoints}
-    divergence = _divergence_text(labels, restricted)
+    divergence = _divergence_text(labels, restricted, topic)
     acceptance = common_ground[0].text if common_ground else 'Farklı görüşlerin aynı ölçütler ve doğrulanabilir veriler üzerinden karşılaştırılması tartışmayı ilerletebilir.'
 
     source_questions = [c for c in comments if '?' in c.text and _has_any(c.text, EVIDENCE_REQUEST_SIGNALS)]
@@ -544,7 +604,7 @@ def build_bridge(
     if source_questions:
         q = source_questions[0]
         missing = f'Cevapsız kaynak/veri talebi #{q.id}: {q.text}'
-        evidence_focus = 'bu seçeneklerin öğrenme, başarı ve akademik güvenilirlik üzerindeki etkisini gösteren güvenilir veri'
+        evidence_focus = topic.evidence_focus
         evidence_ids.append(q.id)
     elif unsourced:
         claim = unsourced[0]
@@ -552,8 +612,8 @@ def build_bridge(
         evidence_focus = claim.verification_need.rstrip('.').casefold()
         evidence_ids.append(claim.comment_id)
     else:
-        missing = 'Belirgin bir kaynak boşluğu görünmüyor; görüşleri ayıran karar ölçütlerinin ortaklaştırılması gerekiyor.'
-        evidence_focus = 'ortak karar ölçütlerini destekleyen doğrulanabilir veri'
+        evidence_focus = topic.evidence_focus
+        missing = f'Belirgin bir kaynak boşluğu görünmüyor; {evidence_focus} için ortak karar ölçütlerinin netleştirilmesi gerekiyor.'
 
     for label in labels:
         cid = _representative_comment(label, comments, stance_details)
@@ -567,8 +627,15 @@ def build_bridge(
     # v1.1.1: Köprü sorusu, ayrıntı kartlarını tekrarlamak yerine tek bir kısa
     # karar sorusuna sıkıştırılır. Ortak zemin + ana ayrışma + kanıt ihtiyacı korunur.
     theme = common_ground[0].theme.casefold() if common_ground else 'ortak ölçütler'
-    contrast = _bridge_contrast(labels, restricted)
-    if source_questions:
+    if topic.is_specific:
+        theme = topic.criteria_phrase
+    contrast = _bridge_contrast(labels, restricted, topic)
+    if topic.is_specific:
+        bridge_question = (
+            f'{contrast.capitalize()} seçeneklerini {theme} bakımından hangi ortak ölçütler '
+            've güvenilir verilerle karşılaştırmalıyız?'
+        )
+    elif source_questions:
         bridge_question = (
             f'{contrast.capitalize()} seçeneklerini {theme} açısından hangi ortak ölçütlerle karşılaştırmalı '
             f've bu ölçütleri hangi güvenilir verilerle sınamalıyız?'
@@ -613,5 +680,7 @@ def build_bridge(
         'contrast_viewpoint_count': len(labels),
         'question_word_count': len(bridge_question.split()),
         'question_max_words': 28,
+        'topic_key': topic.key,
+        'topic_specific': topic.is_specific,
     }
     return bridge, info

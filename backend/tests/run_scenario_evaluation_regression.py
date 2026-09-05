@@ -4,7 +4,7 @@ from collections import Counter
 from statistics import mean
 from unittest.mock import patch
 
-os.environ.setdefault('N_KOPRU_DB_PATH', '/tmp/nkopru_v140_scenario_regression.db')
+os.environ.setdefault('N_KOPRU_DB_PATH', '/tmp/nkopru_v141_scenario_regression.db')
 
 from fastapi.testclient import TestClient
 
@@ -25,8 +25,8 @@ class ScenarioEvaluationRegressionTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         return response.json()
 
-    def test_01_health_reports_version_140(self):
-        self.assertEqual(self.client.get('/health').json()['version'], '1.4.0')
+    def test_01_health_reports_version_141(self):
+        self.assertEqual(self.client.get('/health').json()['version'], '1.5.0')
 
     def test_02_scenario_dataset_has_eighty_cases(self):
         self.assertEqual(scenario_dataset_info()['sample_count'], 80)
@@ -218,7 +218,7 @@ class ScenarioEvaluationRegressionTests(unittest.TestCase):
         self.assertNotEqual(self.run_scenarios()['run_id'], self.run_scenarios()['run_id'])
 
     def test_44_result_version_is_current(self):
-        self.assertEqual(self.run_scenarios()['version'], '1.4.0')
+        self.assertEqual(self.run_scenarios()['version'], '1.5.0')
 
     def test_45_ai_topic_retains_original_candidate_labels(self):
         self.assertEqual(candidate_labels_for_title('Üniversitede yapay zekâ'), LABEL_MAP)

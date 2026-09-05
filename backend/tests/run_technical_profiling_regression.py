@@ -53,9 +53,9 @@ class TechnicalProfilingRegressionTests(unittest.TestCase):
         return legacy
 
     def test_01_new_version_is_consistent(self):
-        self.assertEqual(self.client.get('/health').json()['version'], '1.4.0')
-        self.assertEqual(self.client.get('/api/evaluation').json()['version'], '1.4.0')
-        self.assertEqual(self.measure()['version'], '1.4.0')
+        self.assertEqual(self.client.get('/health').json()['version'], '1.5.0')
+        self.assertEqual(self.client.get('/api/evaluation').json()['version'], '1.5.0')
+        self.assertEqual(self.measure()['version'], '1.5.0')
 
     def test_02_six_real_stages_have_stable_order(self):
         stages = self.measure()['stage_profile']['stages']
