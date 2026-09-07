@@ -15,19 +15,20 @@ gerektiğinde kullanılmalıdır.
 | `N_KOPRU_COACH_FAST_PATH` | `1` | Yüksek güvenli durumlarda hızlı yapısal yanıt yolunu kullanır |
 | `N_KOPRU_DB_PATH` | Uygulamanın yerel SQLite yolu | Kalıcı veritabanı dosyasının açık konumu |
 | `N_KOPRU_CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Virgülle ayrılmış izinli frontend origin'leri |
+| `N_KOPRU_CORS_ORIGIN_REGEX` | Yerel/private LAN adresleri | `localhost`, `127.0.0.1` ve özel ağdaki `:3000` frontend origin'leri için CORS deseni |
 
 PowerShell örneği:
 
 ```powershell
 $env:N_KOPRU_DB_PATH = "D:\NKOPRU\veri\nkopru.db"
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 macOS / Linux örneği:
 
 ```bash
 export N_KOPRU_AI_BATCH_SIZE=4
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend bu değerleri çalışan sürecin ortamından okur. Yerel bir `.env`
@@ -47,10 +48,12 @@ uvicorn app.main:app --port 8000
 
 | Ortam değişkeni | Varsayılan | Açıklama |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Next.js arayüzünün erişeceği FastAPI adresi |
+| `NEXT_PUBLIC_API_URL` | Tarayıcı adresindeki makine adı + `:8000` | Next.js arayüzünün erişeceği FastAPI adresi; sabit sunucu için açıkça tanımlanabilir |
 
 Backend farklı bir adreste çalışıyorsa `frontend/.env.local` içine
-`NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` biçiminde tanımlanabilir.
+`NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` biçiminde tanımlanabilir. Değer
+verilmezse arayüz, `localhost` veya LAN IP'si üzerinden açıldığı makineyi
+otomatik kullanır.
 `.env.local` özel yerel dosyadır ve Git deposuna eklenmemelidir.
 
 ## Donanım ve model kullanımı

@@ -1,6 +1,20 @@
 import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryResponse, BookmarkActionResponse, BookmarkKind, BookmarkResponse, CommentAppendResult, ConversationDetail, ConversationListResponse, ExploreResponse, MessageItem, NotificationActionResponse, NotificationResponse, PilotOverview, PilotSession, PilotPhaseResult, Post, ProfileResponse, SystemReadiness, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicListActionResponse, TopicListDetail, TopicListResponse } from './types';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+
+  // Keep LAN presentations usable without rebuilding the frontend with a
+  // machine-specific IP. The browser and FastAPI process are expected to run
+  // on the same host; the backend must be started with --host 0.0.0.0.
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+  return 'http://127.0.0.1:8000';
+}
+
+const API = resolveApiBase();
 
 export async function getDemoPost(): Promise<Post> {
   const res = await fetch(`${API}/api/posts/demo`, { cache: 'no-store' });

@@ -5,7 +5,7 @@ teslimi `v1.4.0-teknofest-final` değişmez.
 
 ## Sunumdan önce
 
-1. Backend ve frontend'i başlatın.
+1. Backend'i LAN erişimine açık başlatın: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`.
 2. `http://localhost:8000/health` adresinde sürümün `1.5.0` olduğunu kontrol
    edin.
 3. Uygulamada **Sunum Modu → Hazırlığı Yenile** düğmesine basın.
@@ -57,3 +57,8 @@ istenmez. En az 8 tamamlanmış gerçek çift görev olmadan sonuç cümlesi
   Modu yapısal yedek ile devam eder.
 - Veritabanı taşınacaksa `N_KOPRU_DB_PATH` açık bir dosya yoluna ayarlanır;
   mevcut SQLite dosyası silinmez.
+
+Frontend `http://192.168.1.117:3000` gibi bir LAN adresinden açılırsa API
+adresini aynı makinenin `:8000` portuna otomatik uyarlar. Bu nedenle sabit
+`127.0.0.1` adresine bağlı kalmaz; backend'in `--host 0.0.0.0` ile başlaması
+gereklidir.

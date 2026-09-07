@@ -236,7 +236,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Python 3.12 yerine kurulu başka bir desteklenen sürüm kullanılıyorsa sanal
@@ -250,7 +250,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 3. Frontend — ikinci terminal
@@ -268,6 +268,10 @@ npm run dev
 | Uygulama | http://localhost:3000 |
 | Backend sağlık kontrolü | http://127.0.0.1:8000/health |
 | Etkileşimli API dokümantasyonu | http://127.0.0.1:8000/docs |
+
+Frontend'i aynı bilgisayarın LAN adresiyle (ör. `http://192.168.1.117:3000`)
+açarsanız arayüz API adresini tarayıcıdaki makine adına otomatik uyarlar.
+Bu senaryoda backend'in `--host 0.0.0.0` ile başlatılması gerekir.
 
 ### 4. Gerçek AI modelleri — isteğe bağlı
 

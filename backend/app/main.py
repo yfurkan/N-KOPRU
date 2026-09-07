@@ -68,10 +68,13 @@ app = FastAPI(
 
 _default_origins = 'http://localhost:3000,http://127.0.0.1:3000'
 _cors_origins = [item.strip() for item in os.getenv('N_KOPRU_CORS_ORIGINS', _default_origins).split(',') if item.strip()]
+_default_origin_regex = r'^https?://(?:localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):3000$'
+_cors_origin_regex = os.getenv('N_KOPRU_CORS_ORIGIN_REGEX', _default_origin_regex).strip() or None
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],

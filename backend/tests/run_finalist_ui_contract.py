@@ -132,6 +132,15 @@ class FinalistUIContractTests(unittest.TestCase):
         self.assertIn('Backend bağlantısı kurulamadı:', PAGE)
         self.assertIn("setAnnouncement('Örnek tartışma yüklendi.')", PAGE)
 
+    def test_27_api_follows_browser_host_for_lan_presentations(self):
+        self.assertIn('window.location.hostname', API)
+        self.assertIn('window.location.protocol', API)
+        self.assertIn('window.location.hostname}:8000', API)
+
+    def test_28_backend_allows_private_lan_frontend_origin(self):
+        self.assertIn('_default_origin_regex', MAIN)
+        self.assertIn('allow_origin_regex=_cors_origin_regex', MAIN)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

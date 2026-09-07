@@ -36,6 +36,9 @@ korunur; bu sürüm `finalist-v1.5.0` geliştirme dalındadır.
 - `npm audit --omit=dev`: **0 güvenlik açığı**.
 - CORS varsayılan olarak yalnızca yerel frontend adreslerini kabul eder;
   sunucu kurulumu için `N_KOPRU_CORS_ORIGINS` ile açıkça ayarlanabilir.
+- LAN sunumlarında frontend, açıldığı makinenin adresindeki FastAPI `:8000`
+  portuna otomatik bağlanır; backend `--host 0.0.0.0` ile başlatıldığında
+  `192.168.x.x`, `10.x.x.x` ve `172.16–31.x.x` özel ağ origin'leri desteklenir.
 - `.env`, SQLite veritabanı, model önbelleği, `.venv`, `node_modules` ve
   `.next` kaynak teslimine dahil edilmez.
 
