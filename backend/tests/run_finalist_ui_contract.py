@@ -148,6 +148,21 @@ class FinalistUIContractTests(unittest.TestCase):
         self.assertIn("'10.*.*.*'", NEXT_CONFIG)
         self.assertIn("'172.**'", NEXT_CONFIG)
 
+    def test_30_presentation_explains_controller_flow_and_demo_readiness(self):
+        for term in ('Sunum Modu nasıl kullanılır?', 'Demo bir kez hazırlanır', 'Canlı demo hazırlanıyor…', 'Demoyu Hazırla'):
+            self.assertIn(term, PAGE)
+        self.assertIn('demoReady', PAGE)
+        self.assertIn('demoLoading', PAGE)
+
+    def test_31_presentation_does_not_silently_load_ai_model(self):
+        self.assertIn('const presentationUseAI = useAI && aiStatus?.loaded === true', PAGE)
+        self.assertIn('hızlı yapısal motor kullanılır', PAGE)
+        self.assertIn('presentationDemoRequestRef', PAGE)
+
+    def test_32_presentation_panel_explains_story_and_evidence_roles(self):
+        self.assertIn('Bu ekranın görevi', PAGE)
+        self.assertIn('Sol paneldeki 5 adım konuşma sırasıdır', PAGE)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

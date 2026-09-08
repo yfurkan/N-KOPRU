@@ -36,6 +36,10 @@ export default function Home() {
   const [customTitle, setCustomTitle] = useState('Üniversitelerde yapay zekâ kullanımı nasıl düzenlenmeli?');
   const [customComments, setCustomComments] = useState(customExample);
   const [message, setMessage] = useState('');
+  const [presentationDemoLoading, setPresentationDemoLoading] = useState(false);
+  const [presentationDemoError, setPresentationDemoError] = useState('');
+  const presentationDemoRequestRef = useRef<Promise<{post:Post; analysis:Analysis}> | null>(null);
+  const presentationDemoResultRef = useRef<{post:Post; analysis:Analysis} | null>(null);
   const [aiStatus, setAIStatus] = useState<AIStatus | null>(null);
   const [aiLoading, setAILoading] = useState(false);
   const [useAI, setUseAI] = useState(true);
@@ -816,6 +820,41 @@ export default function Home() {
     setExplorePreviewLoading(false);
   }, []);
 
+  async function preparePresentationDemo(): Promise<{post:Post; analysis:Analysis}> {
+    if (presentationDemoResultRef.current) return presentationDemoResultRef.current;
+    if (presentationDemoRequestRef.current) return presentationDemoRequestRef.current;
+
+    setPresentationDemoLoading(true);
+    setPresentationDemoError('');
+    const request = (async () => {
+      const demo = await getDemoPost();
+      // A presentation must remain responsive. The real model is used only
+      // when it is already loaded; otherwise the truthful structural fallback
+      // avoids silently downloading/loading a large model on a button click.
+      const presentationUseAI = useAI && aiStatus?.loaded === true;
+      const result = await analyzePost(demo.id, presentationUseAI);
+      setPost(demo);
+      setAnalysis(result);
+      refreshNotifications('Tümü').catch(() => null);
+      const prepared = {post: demo, analysis: result};
+      presentationDemoResultRef.current = prepared;
+      return prepared;
+    })();
+    presentationDemoRequestRef.current = request;
+
+    try {
+      return await request;
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : 'Jüri demosu hazırlanamadı';
+      setPresentationDemoError(detail);
+      setAnnouncement(detail);
+      throw e;
+    } finally {
+      presentationDemoRequestRef.current = null;
+      setPresentationDemoLoading(false);
+    }
+  }
+
   function openNavPage(page: NavPage) {
     setNavPage(page);
     setCustomOpen(false);
@@ -831,29 +870,22 @@ export default function Home() {
     }
     if (page === 'Profil') refreshProfile(true).catch(() => null);
     if (page === 'Teknik Doğrulama') refreshTechnicalStatus().catch(() => null);
+    if (page === 'Sunum Modu') preparePresentationDemo().catch(() => null);
   }
 
   async function openPresentationDemo(tabIndex = 0) {
-    setLoading(true);
-    setMessage('');
     try {
-      const demo = await getDemoPost();
-      const result = await analyzePost(demo.id, useAI);
-      setPost(demo);
-      setAnalysis(result);
+      const {post: demo, analysis: result} = await preparePresentationDemo();
       setActive(Math.max(0, Math.min(7, tabIndex)));
       setRewrite(null);
       setShowAllComments(false);
       setNavPage('Ana Sayfa');
       setMobilePanelOpen(true);
       setAnnouncement(`Jüri demosu hazırlandı. ${tabs[Math.max(0, Math.min(7, tabIndex))]} modülü açıldı.`);
-      refreshNotifications('Tümü').catch(() => null);
     } catch (e) {
       const detail = e instanceof Error ? e.message : 'Jüri demosu hazırlanamadı';
       setMessage(detail);
       setAnnouncement(detail);
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -1185,6 +1217,10 @@ export default function Home() {
         ) : navPage === 'Sunum Modu' ? (
           <PresentationWorkspace
             onOpenDemo={openPresentationDemo}
+            onPrepareDemo={preparePresentationDemo}
+            demoReady={!!(post && analysis?.post_id === post.id)}
+            demoLoading={presentationDemoLoading}
+            demoError={presentationDemoError}
             onOpenTechnical={() => openNavPage('Teknik Doğrulama')}
             onOpenPilot={() => openNavPage('Etki Pilotu')}
           />
@@ -1592,10 +1628,18 @@ function formatDuration(ms: number) {
 
 function PresentationWorkspace({
   onOpenDemo,
+  onPrepareDemo,
+  demoReady,
+  demoLoading,
+  demoError,
   onOpenTechnical,
   onOpenPilot,
 }:{
   onOpenDemo:(tabIndex?:number)=>Promise<void>;
+  onPrepareDemo:()=>Promise<{post:Post; analysis:Analysis}>;
+  demoReady:boolean;
+  demoLoading:boolean;
+  demoError:string;
   onOpenTechnical:()=>void;
   onOpenPilot:()=>void;
 }) {
@@ -1606,6 +1650,7 @@ function PresentationWorkspace({
   const [activeStep, setActiveStep] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(270);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const story = [
     {title:'1 · Problem', duration:'35 sn', text:'Uzun sosyal tartışmalarda görüşler, iddialar ve cevapsız sorular görünmezleşiyor.'},
@@ -1636,6 +1681,16 @@ function PresentationWorkspace({
     return () => window.clearInterval(timer);
   }, [timerRunning, secondsLeft]);
 
+  async function openDemoTab(tabIndex:number) {
+    if (actionLoading || demoLoading || !demoReady) return;
+    setActionLoading(true);
+    try {
+      await onOpenDemo(tabIndex);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
   const seconds = (secondsLeft % 60).toString().padStart(2, '0');
 
@@ -1645,11 +1700,20 @@ function PresentationWorkspace({
         <div>
           <span className='eyebrow'>N-KÖPRÜ · FİNALİST SUNUM KONSOLU</span>
           <h2>Jüri demosunu tek akışta yönet</h2>
-          <p>Hazırlık denetimi, süre yönetimi, canlı ürün geçişleri ve kanıt ekranları aynı yerde.</p>
+          <p>Bu ekran uygulamanın kendisi değil; jüriye hangi sırayla ne göstereceğini yöneten sunum kumandasıdır.</p>
         </div>
         <div className={`readinessSeal ${readiness?.presentation_ready ? 'ready' : ''}`}>
           <strong>{loading ? '…' : readiness?.presentation_ready ? 'HAZIR' : 'KONTROL'}</strong>
           <span>{readiness ? `v${readiness.version}` : 'v1.5.0'}</span>
+        </div>
+      </div>
+
+      <div className='presentationHowTo'>
+        <div className='presentationHowToIcon'>▶</div>
+        <div>
+          <b>Sunum Modu nasıl kullanılır?</b>
+          <p>Adım kartını seç, o bölümün kısa anlatımını yap ve yalnızca o bölümdeki kanıt düğmesine bas. Demo bir kez hazırlanır; sonraki düğmeler aynı analizin ilgili sekmesini açar.</p>
+          <div className='presentationHowToSteps'><span>1 · Anlat</span><span>2 · Demoyu aç</span><span>3 · Kanıtı göster</span><span>4 · Sonraki adıma geç</span></div>
         </div>
       </div>
 
@@ -1661,7 +1725,7 @@ function PresentationWorkspace({
         </div>
         <button className='primary noMargin' onClick={() => setTimerRunning(value => !value)}>{timerRunning ? 'Sayacı Durdur' : '4:30 Sayacı Başlat'}</button>
         <button className='ghost' onClick={() => { setSecondsLeft(270); setTimerRunning(false); }}>Sıfırla</button>
-        <button className='ghost' onClick={() => void refresh()} disabled={loading}>Hazırlığı Yenile</button>
+        <button className='ghost' onClick={() => void refresh()} disabled={loading || demoLoading}>{loading ? 'Kontrol ediliyor…' : 'Hazırlığı Yenile'}</button>
       </div>
 
       <div className='juryScoreStrip'>
@@ -1700,7 +1764,18 @@ function PresentationWorkspace({
         <h3>{story[activeStep].title}</h3>
         <p>{story[activeStep].text}</p>
         {activeStep === 0 && <div className='juryTalkingPoint'>“Bir tartışmayı daha kısa göstermek yetmez; insanların nerede ayrıştığını, hangi iddianın kanıt istediğini ve hangi sorunun hâlâ açık olduğunu göstermeliyiz.”</div>}
-        {activeStep === 1 && <div className='presentationActions'><button className='primary noMargin' onClick={() => void onOpenDemo(0)}>Canlı Özeti Aç</button><button className='ghost' onClick={() => void onOpenDemo(2)}>Görüş Haritasını Aç</button><button className='ghost' onClick={() => void onOpenDemo(7)}>Köprü Sorusunu Aç</button></div>}
+        {activeStep === 1 && <div className='presentationDemoActions'>
+          <div className={`presentationActionStatus ${demoError ? 'error' : demoReady ? 'ready' : 'pending'}`} role='status' aria-live='polite'>
+            <b>{demoLoading ? 'Canlı demo hazırlanıyor…' : demoReady ? 'Canlı demo hazır.' : demoError ? 'Canlı demo hazırlanamadı.' : 'Canlı demo henüz hazırlanmadı.'}</b>
+            <span>{demoLoading ? 'İlk hazırlık sırasında birkaç saniye bekleyin; model hazır değilse hızlı yapısal motor kullanılır.' : demoReady ? 'Şimdi aşağıdaki üç düğmeden jüriye göstereceğiniz kanıtı seçin.' : demoError || 'Sunum düğmelerini açmak için demoyu bir kez hazırlayın.'}</span>
+          </div>
+          {!demoReady && !demoLoading && <button className='primary noMargin' onClick={() => void onPrepareDemo().catch(() => null)}>↻ Demoyu Hazırla</button>}
+          <div className='presentationActions'>
+            <button className='primary noMargin' onClick={() => void openDemoTab(0)} disabled={!demoReady || demoLoading || actionLoading}>{actionLoading ? 'Açılıyor…' : 'Canlı Özeti Aç'}</button>
+            <button className='ghost' onClick={() => void openDemoTab(2)} disabled={!demoReady || demoLoading || actionLoading}>Görüş Haritasını Aç</button>
+            <button className='ghost' onClick={() => void openDemoTab(7)} disabled={!demoReady || demoLoading || actionLoading}>Köprü Sorusunu Aç</button>
+          </div>
+        </div>}
         {activeStep === 2 && <div className='presentationActions'><button className='primary noMargin' onClick={onOpenTechnical}>Teknik Doğrulamayı Aç</button><span className='presentationTruthNote'>Proje içi doğrulama ile bağımsız benchmark birbirine karıştırılmaz.</span></div>}
         {activeStep === 3 && <div className='presentationActions'><button className='primary noMargin' onClick={onOpenPilot}>Etki Pilotunu Aç</button><span className='presentationTruthNote'>{pilot?.conclusion ?? 'Pilot sonuçları yalnız gerçek katılımcılar tamamladıkça oluşur.'}</span></div>}
         {activeStep === 4 && <div className='juryTalkingPoint'>“Amacımız kullanıcıya ne düşüneceğini söylemek değil; farklı görüşlerin daha güvenli, kanıtlı ve anlaşılır biçimde konuşabilmesini sağlamak.”</div>}
@@ -1723,6 +1798,10 @@ function PresentationPanel() {
           <div className='contextIcon'>1</div>
           <h3>Tek cümlelik değer önerisi</h3>
           <p>N-KÖPRÜ, kalabalık sosyal tartışmaları taraf tutmadan görüş, kanıt ihtiyacı ve ortak karar ölçütlerine dönüştürür.</p>
+        </div>
+        <div className='moduleCard presentationGuideCard'>
+          <h3>Bu ekranın görevi</h3>
+          <p>Sol paneldeki 5 adım konuşma sırasıdır. Kartı seç, kısa anlatımı yap, ardından yalnızca o adıma ait kanıt ekranını aç.</p>
         </div>
         <div className='moduleCard juryChecklist'>
           <h3>Canlı demoda mutlaka göster</h3>
