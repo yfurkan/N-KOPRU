@@ -11,6 +11,7 @@ CSS = (ROOT / 'frontend' / 'app' / 'globals.css').read_text(encoding='utf-8')
 API = (ROOT / 'frontend' / 'lib' / 'api.ts').read_text(encoding='utf-8')
 TYPES = (ROOT / 'frontend' / 'lib' / 'types.ts').read_text(encoding='utf-8')
 MAIN = (ROOT / 'backend' / 'app' / 'main.py').read_text(encoding='utf-8')
+NEXT_CONFIG = (ROOT / 'frontend' / 'next.config.mjs').read_text(encoding='utf-8')
 PACKAGE = json.loads((ROOT / 'frontend' / 'package.json').read_text(encoding='utf-8'))
 
 
@@ -140,6 +141,12 @@ class FinalistUIContractTests(unittest.TestCase):
     def test_28_backend_allows_private_lan_frontend_origin(self):
         self.assertIn('_default_origin_regex', MAIN)
         self.assertIn('allow_origin_regex=_cors_origin_regex', MAIN)
+
+    def test_29_next_dev_allows_private_lan_origin(self):
+        self.assertIn('allowedDevOrigins', NEXT_CONFIG)
+        self.assertIn("'192.168.*.*'", NEXT_CONFIG)
+        self.assertIn("'10.*.*.*'", NEXT_CONFIG)
+        self.assertIn("'172.**'", NEXT_CONFIG)
 
 
 if __name__ == '__main__':

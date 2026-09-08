@@ -39,6 +39,8 @@ korunur; bu sürüm `finalist-v1.5.0` geliştirme dalındadır.
 - LAN sunumlarında frontend, açıldığı makinenin adresindeki FastAPI `:8000`
   portuna otomatik bağlanır; backend `--host 0.0.0.0` ile başlatıldığında
   `192.168.x.x`, `10.x.x.x` ve `172.16–31.x.x` özel ağ origin'leri desteklenir.
+- Next.js geliştirme sunucusunda aynı özel ağ origin'leri `allowedDevOrigins`
+  ile açıkça tanımlıdır; LAN sunumunda cross-origin geliştirme uyarısı oluşmaz.
 - `.env`, SQLite veritabanı, model önbelleği, `.venv`, `node_modules` ve
   `.next` kaynak teslimine dahil edilmez.
 
