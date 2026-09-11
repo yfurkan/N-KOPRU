@@ -14,7 +14,7 @@
   sınırını denetler; model yüklenmesi zorunlu değildir.
 - Next.js `15.5.25`, `postcss 8.5.28` ve `sharp 0.35.4` güvenlik sabitlemeleri;
   üretim `npm audit` sonucu 0 açık.
-- 54 test paketi ve 1.232/1.232 otomatik kontrol, TypeScript, üretim
+- 54 test paketi ve 1.238/1.238 otomatik kontrol, TypeScript, üretim
   derlemesi, Python compileall ve 12/12 API kabul dumanı başarılıdır.
 - Gerçek kullanıcı pilotu henüz yapılmadı; ürün etkisi sonucu iddia edilmez.
 

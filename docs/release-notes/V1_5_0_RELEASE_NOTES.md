@@ -28,8 +28,9 @@ korunur; bu sürüm `finalist-v1.5.0` geliştirme dalındadır.
 
 ## Teknik kalite ve güvenlik
 
-- `backend/app/readiness.py` ile SQLite bütünlüğü, ürün şeması, 20 benzersiz
-  demo yorumu, sekiz analiz çıktısı ve 28 kelimelik Köprü sınırı tek istekte
+- `backend/app/readiness.py` ile SQLite bütünlüğü, ürün şeması, 80 ham yorumdan
+  varyantları normalize edilmiş 20 temel demo yorumu, sekiz analiz çıktısı ve
+  28 kelimelik Köprü sınırı tek istekte
   denetlenir. Transformer ve Yanıt Koçu modelleri isteğe bağlıdır.
 - Frontend Next.js `15.5.25` sürümüne yükseltilmiş, `postcss` ve `sharp`
   güvenlik düzeltmeleri lockfile override ile sabitlenmiştir.
@@ -46,7 +47,7 @@ korunur; bu sürüm `finalist-v1.5.0` geliştirme dalındadır.
 
 ## Doğrulama
 
-- Backend: **54 test paketi, 1.232 / 1.232 başarılı**.
+- Backend: **54 test paketi, 1.238 / 1.238 başarılı**.
 - Frontend: TypeScript kontrolü başarılı; Next.js üretim derlemesi başarılı.
 - Python: `compileall` başarılı.
 - API kabul dumanı: **12/12** akış başarılı (health, readiness, demo,

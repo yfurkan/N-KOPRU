@@ -11,11 +11,11 @@ konuşmaları susturmak değil; anlayışı ve nitelikli etkileşimi büyütmekt
 
 | Sabit v1.4.0 Macro-F1 | Sabit v1.4.0 sınıflandırma | v1.5.0 otomatik testler | Çalışan analiz adımı |
 |:---:|:---:|:---:|:---:|
-| **%92,5** | **74 / 80 doğru** | **1.232 / 1.232 başarılı** | **8 modül** |
+| **%92,5** | **74 / 80 doğru** | **1.238 / 1.238 başarılı** | **8 modül** |
 
 > Kalite sonuçları sabit `v1.4.0` TEKNOFEST teslimindeki 80 elle
 > etiketlenmiş **proje içi** doğrulamaya aittir. Yeni `v1.5.0` finalist
-> geliştirme sürümünde 1.232 otomatik test çalışır ve önceki 80 örnekten tamamen ayrı
+> geliştirme sürümünde 1.238 otomatik test çalışır ve önceki 80 örnekten tamamen ayrı
 > yeni bir iç kontrol sunulur. Her iki ölçüm de proje içidir; bağımsız
 > akademik benchmark, dış veri başarısı veya kullanıcı performansı değildir.
 
@@ -90,7 +90,7 @@ bağlıdır; belirli bir bilgisayar veya ekran kartı modeli zorunlu değildir.
   ok tuşlarıyla sekme gezinmesi ve varsayılan gizlilik modu kullanılabilir.
 - Next.js `15.5.25` güvenlik güncellemeleriyle sabitlendi; üretim bağımlılık
   taramasında **0 açık** bulundu.
-- **54 test paketi / 1.232 başarılı test**, başarılı TypeScript ve üretim
+- **54 test paketi / 1.238 başarılı test**, başarılı TypeScript ve üretim
   derlemesi, ayrıca **12/12 API kabul dumanı** tamamlandı.
 
 Gerçek pilot katılımcısı henüz bulunmadığı için bu sürüm kullanıcı etkisi
@@ -298,7 +298,7 @@ Sabit `v1.4.0` tesliminde **43 test paketi ve 808 başarılı otomatik test**
 bulunur. `v1.4.1` geliştirmesi bunu **46 pakette 980 başarılı teste**,
 `v1.4.2` ise **50 pakette 1.164 başarılı teste** çıkarmıştır. `v1.5.0`,
 pilot, hazırlık endpoint'i, mobil/erişilebilirlik ve sunum sözleşmelerini
-ekler: **54 paket, 1.232 / 1.232 başarılı**.
+ekler: **54 paket, 1.238 / 1.238 başarılı**.
 Bildirim tekilleştirme, SQLite kalıcılığı, canlı tartışma, görüş tutarlılığı,
 iddia önbelleği, sekiz analiz adımı ve arayüz sözleşmeleri test kapsamındadır.
 

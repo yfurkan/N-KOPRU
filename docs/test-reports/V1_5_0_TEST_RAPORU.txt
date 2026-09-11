@@ -1,5 +1,5 @@
 N-KÖPRÜ v1.5.0 FINALIST TEST RAPORU
-Tarih: 2026-09-07
+Tarih: 2026-09-11
 Dal: finalist-v1.5.0
 Yerel doğrulama dalı: finalist-v1.5.0
 GitHub finalist dalı: `finalist-v1.5.0` (Actions kalite kapısı başarılı)
@@ -7,7 +7,7 @@ GitHub finalist dalı: `finalist-v1.5.0` (Actions kalite kapısı başarılı)
 1. Backend tam regresyon
 
 Komut: python -m unittest discover -s tests -p 'run_*.py' -v
-Sonuç: 54 test paketi, 1.234 / 1.234 BAŞARILI
+Sonuç: 54 test paketi, 1.238 / 1.238 BAŞARILI
 
 Kapsam:
 - v1.4.0/v1.4.1/v1.4.2 davranış ve kalıcılık kontrolleri
@@ -28,7 +28,8 @@ Kapsam:
 
 Sonuç: 12 / 12 BAŞARILI
 
-Kontroller: health v1.5.0, sistem hazırlığı, 80 ham/20 benzersiz demo,
+Kontroller: health v1.5.0, sistem hazırlığı, 80 ham/20 tekrar-normalize edilmiş
+temel demo yorumu,
 demo analiz ve 28 kelime sınırı, özel tartışma, canlı yorum, pilot başlangıç,
 iki pilot fazı, CSV dışa aktarımı ve localhost CORS preflight.
 

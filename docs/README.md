@@ -23,7 +23,7 @@ kaynak kodundan ayrı, takip edilebilir bir yapıda toplar.
 - [İnsan tarafından okunabilir test raporu](test-reports/V1_5_0_TEST_RAPORU.txt)
 - [Makine tarafından okunabilir test sonuçları](test-reports/V1_5_0_TEST_SONUCLARI.json)
 - [Sürüm notları](release-notes/V1_5_0_RELEASE_NOTES.md)
-- 54 test paketi, 1.232 başarılı kontrol, başarılı üretim derlemesi ve 12/12
+- 54 test paketi, 1.238 başarılı kontrol, başarılı üretim derlemesi ve 12/12
   API kabul dumanı.
 
 ## v1.4.1 geliştirme kanıtları

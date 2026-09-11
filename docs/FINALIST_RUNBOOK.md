@@ -8,19 +8,25 @@ teslimi `v1.4.0-teknofest-final` değişmez.
 1. Backend'i LAN erişimine açık başlatın: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`.
 2. `http://localhost:8000/health` adresinde sürümün `1.5.0` olduğunu kontrol
    edin.
-3. Uygulamada **Sunum Modu → Hazırlığı Yenile** düğmesine basın.
+3. Uygulamada **Sunum Modu**'nu açın. Ekran açılırken sabit jüri demosu ve
+   hazırlık kontrolleri arka planda çalışır; ilk açılışta birkaç saniye beklemek
+   normaldir.
 4. Zorunlu hazırlık kartlarında `Hazır` durumunu ve 5/5 zorunlu kontrolü
-   görün.
-5. **Canlı Özeti Aç** ile sabit demo tartışmasını açın; gerekiyorsa AI
-   modelini ayrıca hazırlayın. Model yüklenmezse yapısal yedek motor sunumu
-   engellemez.
+   görün. `Canlı demo hazır.` yazmadan kanıt düğmeleri bilerek pasif kalır.
+5. **2 · Çalışan çözüm** kartını seçin. `Demoyu Hazırla` yalnızca hazırlık
+   başarısızsa veya yenilemek istiyorsanız kullanılır; demo bir kez hazırlanır.
+6. **Canlı Özeti Aç**, **Görüş Haritasını Aç** veya **Köprü Sorusunu Aç**
+   düğmelerinden birine basın. Bunlar yeni analiz başlatmaz; aynı hazırlanmış
+   tartışmanın ilgili sekmesini anında açar.
+7. İsterseniz AI modelini ayrıca hazırlayın. Model yüklenmezse yapısal yedek
+   motor sunumu engellemez ve ekran bunu açıkça belirtir.
 
 ## Önerilen 4:30 akış
 
 | Süre | Ekran | Vurgu |
 |---:|---|---|
 | 0:00–0:35 | Problem ve amaç | Uzun tartışmayı karar haritasına dönüştürme |
-| 0:35–1:35 | Tartışmayı Anla | 20 benzersiz yorum, ayrışma ve kaynak farkındalığı |
+| 0:35–1:35 | Tartışmayı Anla | 80 ham yorumdan normalize edilmiş 20 temel yorum, ayrışma ve kaynak farkındalığı |
 | 1:35–2:35 | Görüş Haritası | Görüş kümeleri ve temsilci yorumlar |
 | 2:35–3:25 | İddia/Soru | Hangi kanıtın eksik olduğu |
 | 3:25–4:30 | Köprü ve etki | Ortak ölçüt, kısa köprü sorusu ve pilot tasarımı |

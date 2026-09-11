@@ -146,7 +146,9 @@ class FinalistUIContractTests(unittest.TestCase):
         self.assertIn('allowedDevOrigins', NEXT_CONFIG)
         self.assertIn("'192.168.*.*'", NEXT_CONFIG)
         self.assertIn("'10.*.*.*'", NEXT_CONFIG)
-        self.assertIn("'172.**'", NEXT_CONFIG)
+        self.assertIn("'172.16.*.*'", NEXT_CONFIG)
+        self.assertIn("'172.31.*.*'", NEXT_CONFIG)
+        self.assertNotIn("'172.**'", NEXT_CONFIG)
 
     def test_30_presentation_explains_controller_flow_and_demo_readiness(self):
         for term in ('Sunum Modu nasıl kullanılır?', 'Demo bir kez hazırlanır', 'Canlı demo hazırlanıyor…', 'Demoyu Hazırla'):
