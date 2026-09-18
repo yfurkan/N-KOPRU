@@ -1,9 +1,9 @@
 N-KÖPRÜ v1.5.0 — YANIT KOÇU BİLEŞENİ FİNAL TEST RAPORU
-Tarih: 20 Ağustos 2026
+Tarih: 18 Eylül 2026
 
 SONUÇ
-- Regresyon test grubu: 29 / 29 başarılı
-- Toplam senaryo kontrolü: 552
+- Regresyon test grubu: 35 / 35 başarılı
+- Toplam senaryo kontrolü: 576
 - Hata: 0
 - API sözleşme testi: başarılı
 - Backend Python py_compile/compileall: başarılı
@@ -18,6 +18,13 @@ v1.5.0 KAYNAĞINDA DOĞRULANAN KRİTİK DÜZELTMELER
 4. "Serbest olsun ama kaynak göstermeden kabul edilmesin" gibi karma görüşlerde kaynak/kanıt sinyali ayrıca korunuyor.
 5. Hakaret + konuya katkı eleştirisi + bilgi eksikliği aynı cümledeyse, gerçek eleştiri "bilgi/gerekçe eksikliği" olarak korunuyor.
 6. Üretken aday doğrulama kapısı, ironiyi literal bırakmayı ve dengeli görüşü tek tarafa çevirmeyi reddediyor.
+7. "Fikrin bile yok", "senden bir bok olmaz" ve "konuyu bilmiyorsun" gibi
+   kişisel küçümsemeler ve kısa doğrudan saldırılar artık nötr kabul edilmiyor; konu ve gerekçe ekseni
+   korunarak yeniden yazılıyor.
+8. Nokta/leet yazımıyla gizlenen saldırılar ve tehdit ifadeleri güvenli kapıdan
+   geçiriliyor; `%70` gibi meşru sayılar saldırı temizliği sırasında bozulmuyor.
+9. Aynı saldırı ailesi için deterministik, güvenli ifade çeşitliliği eklendi;
+   aynı kalıp her girişte tek cevaba kilitlenmiyor.
 
 REGRESYON KAPSAMI
 - Önceki v0.4.3 testlerinin tamamı
@@ -31,6 +38,7 @@ REGRESYON KAPSAMI
 - Bağlamı yeniden değerlendirme, kaynak saldırısı, katkı saldırısı ve saf saldırı testleri
 - Kötü üretken adayın reddi ve güvenli adayın kabulü
 - Yüksek güvenli hızlı yolun üretken modeli çağırmaması
+- Kişisel küçümseme, gizlenmiş saldırı, tehdit ve cevap çeşitliliği regresyonları
 
 PERFORMANS BENCHMARKI
 - 10 kritik örnek × 100 tur = 1000 çağrı
@@ -45,5 +53,6 @@ GERÇEK MODEL TEST NOTU
 Bu çalışma ortamında transformers modeli indirilebilir/ağ erişimli durumda olmadığı için Qwen/Qwen2.5-0.5B-Instruct gerçek inference testi burada yeniden koşturulmadı. Kritik ironi, dengeli görüş, kaynak, sayı, soru ve açık saldırı yolları üretken modele bağımlı değildir. Üretken yolun kabul/red mantığı sahte güvenli ve sahte hatalı adaylarla regresyon testinden geçirilmiştir.
 
 KARAR
-Yanıt Koçu bileşeninde ironi, dengeli görüş ve birleşik eleştiri düzeltmeleri
+Yanıt Koçu bileşeninde ironi, dengeli görüş, birleşik eleştiri, kişisel
+küçümseme, gizlenmiş saldırı, tehdit ve tekrar eden cevap düzeltmeleri
 tamamlandı. Mevcut test kümesinde regresyon bulunmadı.

@@ -33,7 +33,7 @@ v1.5.0’dır; arşiv dosyalarındaki sürüm, dal veya test akışı bu teslimi
 
 ## Doğrulama özeti
 
-- Backend: 54 test paketi, 1.240 / 1.240 başarılı.
+- Backend: 54 test paketi, 1.246 / 1.246 başarılı.
 - Frontend: production build ve TypeScript kontrolü başarılı.
 - Production bağımlılık denetimi: 0 açık.
 - API kabul kontrolü: scripts/api_smoke.py ile 35 / 35.

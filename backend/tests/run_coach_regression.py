@@ -19,6 +19,7 @@ from app.coach_engine import (  # noqa: E402
     _has_any,
     _normalize,
     _numbers,
+    THREAT_PATTERNS,
     analyze_message,
     rewrite_with_ai,
 )
@@ -34,6 +35,7 @@ class CoachRegression(unittest.TestCase):
         low = _normalize(suggestion)
         self.assertFalse(_has_any(OFFENSIVE_PATTERNS, low), suggestion)
         self.assertFalse(_has_any(DIRECT_ATTACK_PATTERNS, low), suggestion)
+        self.assertFalse(_has_any(THREAT_PATTERNS, low), suggestion)
         self.assertNotIn('system prompt', low)
         self.assertNotIn('user prompt', low)
         self.assertNotIn('özgün mesaj:', low)
@@ -41,7 +43,11 @@ class CoachRegression(unittest.TestCase):
     def test_01_known_cases_exact(self):
         cases = {
             'Sen bu konudan hiçbir şey anlamıyorsun.':
-                'Bu görüşün gerekçesini yeterince ikna edici bulmuyorum. Dayandığın bilgi, örnek veya gerekçeleri daha açık paylaşabilir misin?',
+                (
+                    'Bu görüşün gerekçesini yeterince ikna edici bulmuyorum. Dayandığın bilgi, örnek veya gerekçeleri daha açık paylaşabilir misin?',
+                    'Bu konuda farklı düşünüyorum. Görüşünü destekleyen bilgi, örnek veya gerekçeleri paylaşabilir misin?',
+                    'Kişisel değerlendirme yerine görüşün dayanağını konuşalım. Bu düşünceye hangi bilgi veya gerekçelerle ulaştığını açıklar mısın?',
+                ),
             'Mal beyinli yavşak yasaklayıp ne yapacaksınız, kullanın işte.':
                 'Yapay zekâyı yasaklamanın çözüm olduğunu düşünmüyorum; kullanımına izin verilmesi gerektiği görüşündeyim.',
             "Geçen dönem öğrencilerin %70'i yapay zekâ kullandı.":
@@ -60,7 +66,8 @@ class CoachRegression(unittest.TestCase):
         for original, expected in cases.items():
             with self.subTest(original=original):
                 result = self.rewrite(original)
-                self.assertEqual(result['suggestion'], expected)
+                expected_options = expected if isinstance(expected, tuple) else (expected,)
+                self.assertIn(result['suggestion'], expected_options)
                 self.assert_safe(result['suggestion'])
 
     def test_02_clean_messages_are_not_needlessly_changed(self):
@@ -589,6 +596,86 @@ class CoachRegression(unittest.TestCase):
         ok, reason = _candidate_valid(balanced, good_balance, balanced_signals)
         self.assertTrue(ok, reason)
 
+    def test_30_observed_personal_dismissal_is_not_preserved(self):
+        original = 'Senden hiç bir bok olamaz. bir konu hakkında fikrin bile yok'
+        signals = analyze_message(original)
+        self.assertIn('hakaret/küfür', signals)
+        self.assertIn('kişiye yönelik saldırı', signals)
+
+        result = self.rewrite(original)
+        self.assertNotEqual(result['engine'], 'preserve-safe')
+        self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
+        self.assert_safe(result['suggestion'])
+        self.assertIn('konu', result['suggestion'].casefold())
+        self.assertTrue(any(word in result['suggestion'].casefold() for word in ('görüş', 'gerekçe', 'bilgi')))
+
+    def test_31_personal_dismissal_matrix_is_reframed(self):
+        cases = [
+            'Senden hiçbir bok olmaz; bu konuda fikrin bile yok.',
+            'Bu konuda fikrin bile yok.',
+            'Bu konu hakkında hiçbir fikrin yok.',
+            'Konuyu bilmiyorsun.',
+            'Senden adam olmaz.',
+            'Yalan söylüyorsun.',
+            'Defol buradan.',
+            'Haddini bil.',
+        ]
+        for original in cases:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertIn('kişiye yönelik saldırı', signals)
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
+                self.assert_safe(result['suggestion'])
+                if original == 'Boktan bir yorum olmuş.':
+                    self.assertNotEqual(result['suggestion'].casefold(), 'bir yorum olmuş.')
+                    self.assertTrue(any(word in result['suggestion'].casefold() for word in ('görüş', 'gerekçe', 'tartışma')))
+
+    def test_32_non_profanity_dismissals_do_not_bypass_coach(self):
+        cases = [
+            'Kaynaklarınla gel de öyle konuş.',
+            'Alakasız yorum yapıyorsun.',
+            'Boktan bir yorum olmuş.',
+        ]
+        for original in cases:
+            with self.subTest(original=original):
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
+                self.assert_safe(result['suggestion'])
+
+    def test_33_obfuscated_attacks_are_detected_and_removed(self):
+        cases = [
+            'Senden b0k olmaz; hiç b.i.r fikrin yok.',
+            'S1kt1r g1t, bu görüşe katılmıyorum.',
+        ]
+        for original in cases:
+            with self.subTest(original=original):
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
+                self.assert_safe(result['suggestion'])
+
+    def test_34_threats_are_deescalated_without_echo(self):
+        cases = ['Seni döverim.', 'Seni öldürürüm.', 'Seni döverim ama bu fikir uygulanabilir değil.']
+        for original in cases:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertIn('tehdit/şiddet', signals)
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assert_safe(result['suggestion'])
+                self.assertNotIn('döver', result['suggestion'].casefold())
+                self.assertNotIn('öldür', result['suggestion'].casefold())
+
+    def test_35_same_attack_family_has_controlled_response_variety(self):
+        cases = ['Salak.', 'Aptal.', 'Beyinsiz.', 'Cahil.', 'Gerizekalı.', 'Yavşak.', 'Şerefsiz.']
+        suggestions = [self.rewrite(original)['suggestion'] for original in cases]
+        for suggestion in suggestions:
+            self.assert_safe(suggestion)
+        self.assertGreaterEqual(len(set(suggestions)), 3)
+
 
 
 def main() -> int:
@@ -608,7 +695,11 @@ def main() -> int:
         'generated_fuzz_cases': 300,
         'irony_matrix_cases': 40,
         'balanced_matrix_cases': 12,
-        'total_scenario_checks': 552,
+        'personal_dismissal_cases': 9,
+        'obfuscated_attack_cases': 2,
+        'threat_cases': 3,
+        'response_variety_cases': 7,
+        'total_scenario_checks': 576,
     }
     print('\nSUMMARY:', json.dumps(summary, ensure_ascii=False))
     return 0 if result.wasSuccessful() else 1

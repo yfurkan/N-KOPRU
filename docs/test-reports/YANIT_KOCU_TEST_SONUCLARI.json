@@ -1,13 +1,17 @@
 {
   "version": "1.5.0",
-  "tests_run": 29,
+  "tests_run": 35,
   "failures": 0,
   "errors": 0,
   "successful": true,
-  "elapsed_seconds": 0.786,
+  "elapsed_seconds": 1.773,
   "bulk_safety_matrix_cases": 96,
   "generated_fuzz_cases": 300,
   "irony_matrix_cases": 40,
   "balanced_matrix_cases": 12,
-  "total_scenario_checks": 552
+  "personal_dismissal_cases": 9,
+  "obfuscated_attack_cases": 2,
+  "threat_cases": 3,
+  "response_variety_cases": 7,
+  "total_scenario_checks": 576
 }

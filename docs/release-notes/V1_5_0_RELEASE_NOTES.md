@@ -15,7 +15,9 @@ olarak bildirir.
 - Kontrollü Senaryo ekranı iki sabit yerel örnekte ham yorumlar ile N-KÖPRÜ
   çıktısını karşılaştırır. Gerçek kullanıcı ve etki metriği yolu kapalıdır.
 - Yanıt Koçu; saldırı kabuğunu temizlerken sayı, soru, kaynak talebi, ironi,
-  koşullu görüş ve ana anlamı korumaya odaklanır.
+  koşullu görüş ve ana anlamı korumaya odaklanır. Kişisel küçümseme, gizlenmiş
+  küfür ve tehdit kalıpları da güvenli yoldan ayrılır; cevap şablonları aynı
+  saldırı ailesinde tek metne kilitlenmez.
 - Mobil menü, analiz çekmecesi, skip-link, canlı durum alanı, klavye ile sekme
   gezinmesi ve reduced-motion desteği korunur.
 

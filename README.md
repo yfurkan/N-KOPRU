@@ -19,7 +19,7 @@ sürümü v1.5.0’dır. Eski sürüm kayıtları yalnızca geçmişi izlemek i�
 |---|---:|
 | Güncel uygulama sürümü | **v1.5.0** |
 | Çalışan analiz modülü | **8** |
-| Backend otomatik testi | **1.240 / 1.240** |
+| Backend otomatik testi | **1.246 / 1.246** |
 | Zorunlu hazırlık kontrolü | **5 / 5** |
 | Frontend üretim derlemesi | **Başarılı** |
 | Production bağımlılık denetimi | **0 açık** |
@@ -233,7 +233,7 @@ npx tsc --noEmit
 npm audit --omit=dev --audit-level=high
 ```
 
-Bu teslimde doğrulanan backend sonucu `1.240 / 1.240`’dır. Testler geçici
+Bu teslimde doğrulanan backend sonucu `1.246 / 1.246`’dır. Testler geçici
 SQLite yolu kullanılacak şekilde çalıştırılmak istenirse `N_KOPRU_DB_PATH`
 ortam değişkeni açık bir dosya yoluna ayarlanabilir. Testler ve jüri demosu
 gerçek kullanıcı verisi gerektirmez.
@@ -291,10 +291,9 @@ N-KOPRU/
 Teknik rapordaki 98/100 puan ve raporun v1.4.0 temelindeki 80 elle
 etiketlenmiş örnekten 74/80, %92,5 Macro-F1 sonucu geçmiş teslim kanıtıdır.
 Bu sayı v1.5.0 için gerçek kullanıcı başarısı değildir. v1.5.0’da gösterilen
-1.240 otomatik test; kod, API, kalıcılık ve arayüz sözleşmelerinin geçtiğini
+1.246 otomatik test; kod, API, kalıcılık ve arayüz sözleşmelerinin geçtiğini
 gösterir, kullanıcı etkisini ölçmez. Kaynak kodu bu ayrımı arayüzde ve
 raporlarda korur.
-
 
 ---
 

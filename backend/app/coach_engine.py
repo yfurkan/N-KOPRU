@@ -16,6 +16,7 @@ Varsayılan üretken model: Qwen/Qwen2.5-0.5B-Instruct
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import os
 import re
 import time
@@ -49,6 +50,17 @@ OFFENSIVE_PATTERNS = [
     r'\bdangalak\w*\b', r'\bşerefsiz\w*\b', r'\bmoron\w*\b', r'\bpezevenk\w*\b',
     r'\bsiktir\w*\b', r'\bsikerim\b', r'\bsikeyim\b', r'\bsiktim\b', r'\borospu\w*\b', r'\bpiç\w*\b', r'\bamk\b', r'\baq\b',
     r'\bgötünden\w*\b', r'\bgöt(?:ün|ünü|üne|ünden|ü|e|ten)?\b', r'\bmal\s+m[ıi]s[ıi]n\b', r'\bmal(?:sın|sin)\b', r'\bcahil\w*\b', r'\bzeka\s*özürlü\w*\b', r'\bzek[aâ]\s*özürlü\w*\b',
+    r'\bbok(?:tan|luk)?\b', r'\bterbiyesiz\w*\b', r'\byalanc[ıi]\w*\b', r'\bhıyar\w*\b', r'\böküz\w*\b', r'\bşapşal\w*\b',
+]
+
+# Kişinin fikrini/bilgisini küçümseyen, küfür içermese de doğrudan hedef alan kalıplar.
+# "Senden hiç bir bok olamaz" gibi yazım aralığı değişen biçimler özellikle korunur.
+PERSONAL_DISMISSAL_PATTERNS = [
+    r'\bfikrin\s+(?:bile\s+)?yok\b',
+    r'\b(?:hiçbir|hiç\s+bir)\s+fikrin\s+(?:bile\s+)?yok\b',
+    r'\bdüşüncen\s+(?:bile\s+)?yok\b',
+    r'\b(?:hiçbir|hiç\s+bir)\s+düşüncen\s+(?:bile\s+)?yok\b',
+    r'\bfikirden\s+anlamıyorsun\b',
 ]
 
 # Hakaret kelimesi içermese de kişiyi hedefleyen kalıplar.
@@ -60,7 +72,30 @@ DIRECT_ATTACK_PATTERNS = [
     r'\bkafanı\s+kullan\w*\b', r'\bkafan\s+basmıyor\b', r'\bkafanı\s+çalıştır\w*\b', r'\baklın\s+yok\b', r'\bokumayı\s+bilmiyor\w*\b', r'\bokuduğunu\s+anlamıyor\w*\b',
     r'\bkonuyu\s+(?:en\s+)?baştan\s+oku\w*\b', r'\bönce\s+konuyu\s+oku\w*\b',
     r'\bkonuyu\s+okumamış\w*\b', r'\bkonuyu\s+anlamamış\w*\b', r'\bkonuyu\s+anlamadan\b',
+    r'\bkonuyu\s+bilmiyorsun\b', r'\bbu\s+konuyu\s+bilmiyorsun\b',
     r'\bbey\w*\b.{0,25}\bev\w*\b.{0,25}\bunut\w*\b',
+    *PERSONAL_DISMISSAL_PATTERNS,
+    r'\bsenden\s+(?:(?:hiç|hiçbir|hiç\s+bir)\s+)?(?:bir\s+)?(?:bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
+    r'\bsenden\s+adam\s+olmaz\b',
+    r'\b(?:hiçbir|hiç\s+bir)\s+şeyden\s+haber(?:in)?\s+yok\b',
+    r'\byalan\s+söylüyorsun\w*\b', r'\bsallıyorsun\w*\b', r'\bdefol(?:un)?\b',
+    r'\bhaddini\s+bil\w*\b', r'\b(?:git|çekil)\s+(?:buradan|başından|işine)\b',
+]
+
+ACCUSATION_ATTACK_PATTERNS = [
+    r'\byalan\s+söylüyorsun\w*\b', r'\bsallıyorsun\w*\b',
+]
+
+BOUNDARY_ATTACK_PATTERNS = [
+    r'\bdefol(?:un)?\b', r'\bhaddini\s+bil\w*\b',
+    r'\b(?:git|çekil)\s+(?:buradan|başından|işine)\b',
+]
+
+# Tehdit/şiddet ifadeleri ayrı sinyal olarak tutulur; modelin bunları güvenli bir
+# "görüş" gibi aynen bırakması engellenir. Gerçek kişi tespiti veya moderasyon kararı değildir.
+THREAT_PATTERNS = [
+    r'\b(?:seni|sana)\s+(?:döverim|döveceğim|öldürürüm|gebertirim|yaralarım|vururum|bulurum)\b',
+    r'\b(?:öldürürüm|gebertirim|döverim|döveceğim|yaralarım)\b',
 ]
 
 DISAGREEMENT_MARKERS = (
@@ -79,6 +114,14 @@ SOURCE_ACCUSATION_MARKERS = (
     'kaynağın ne', 'kaynağı ne', 'kaynağı nedir', 'kanıtın ne', 'verin ne', 'bilgi üretip durma',
     'kaynak göstermeden', 'kaynak göster', 'kanıt göster'
 )
+# Kaynak/kanıt ifadesi her zaman saldırı değildir: "kaynak göstermeden kullanılan
+# içerik kabul edilmesin" gibi cümleler yapıcı koşullu görüştür. Burada yalnız
+# azarlama veya açık suçlama içeren alt küme kullanılır.
+SOURCE_ATTACK_MARKERS = (
+    'uydur', 'götünden bilgi', 'götünden bilgiler', 'kaynaklarınla gel', 'kaynakla gel',
+    'bilgi üretip durma', 'kaynak göstermeden konuş', 'kaynak göstermeden paylaş',
+    'kaynak göster de', 'kanıt göster de'
+)
 CONTRIBUTION_CRITICISM_MARKERS = (
     'gereksiz yorum', 'konuyla alakalı', 'konuyla ilgili', 'yorumun yok', 'katkı sağlam',
     'sadece konuş', 'nereye varmayı', 'boş konuş', 'konuya katkı', 'konudan sap', 'alakasız yorum'
@@ -90,7 +133,7 @@ CONTEXT_REVIEW_ATTACK_MARKERS = (
 )
 EXPERTISE_ATTACK_MARKERS = (
     'hiçbir şey anlamıyorsun', 'hiçbir şey bilmiyorsun', 'bilgin yok', 'bilgin bile yok', 'bilgin de yok', 'bu konudan anlamıyorsun',
-    'bu konuda bir bilgin yok', 'konuyu bilmiyorsun', 'anlamıyorsun', 'bilmiyorsun', 'kafan basmıyor',
+    'bu konuda bir bilgin yok', 'konuyu bilmiyorsun', 'bu konuyu bilmiyorsun', 'anlamıyorsun', 'bilmiyorsun', 'kafan basmıyor',
     'aklın yok', 'okumayı bilmiyor', 'okuduğunu anlamıyor'
 )
 PROMPT_LEAK_MARKERS = (
@@ -108,10 +151,25 @@ STOPWORDS = {
     'yani', 'yerine', 'yok', 'çok', 'kadar', 'gerçekten', 'konuda', 'konuyu', 'konuyla',
 }
 
+# Nokta/leet yazımıyla gizlenmiş iki yaygın küfür için yalnız saldırı kabuğunda
+# kullanılan kalıplar. Metnin tamamını normalleştirmiyoruz; böylece %70 gibi
+# meşru sayılar bozulmadan korunuyor.
+OBFUSCATED_ATTACK_SHELL_PATTERNS = [
+    r'\bb[\W_]*[o0][\W_]*k(?:[\W_]*t[\W_]*a[\W_]*n|[\W_]*l[\W_]*u[\W_]*k)?\b',
+    r'\bs[\W_]*[i1][\W_]*k[\W_]*t[\W_]*[i1][\W_]*r(?:[\W_]+g[\W_]*[i1][\W_]*t\w*)?\b',
+]
+
 # Saldırı kabuğunu çıkarırken tüm ana içeriği silmemek için yalnız yüksek güvenli kalıplar.
 ATTACK_SHELL_PATTERNS = [
     r'\b(?:aptal|salak|mal|gerizek[aâ]l[ıi]|ahmak)\s+m[ıi]s[ıi]n\b',
     *OFFENSIVE_PATTERNS,
+    *PERSONAL_DISMISSAL_PATTERNS,
+    r'\bsenden\s+(?:(?:hiç|hiçbir|hiç\s+bir)\s+)?(?:bir\s+)?(?:bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
+    r'\bsenden\s+adam\s+olmaz\b',
+    *ACCUSATION_ATTACK_PATTERNS,
+    *BOUNDARY_ATTACK_PATTERNS,
+    *THREAT_PATTERNS,
+    *OBFUSCATED_ATTACK_SHELL_PATTERNS,
     r'\bsen\s+bu\s+konudan\s+hiçbir\s+şey\s+anlamıyorsun\b',
     r'\bsen\b.{0,45}\banlamıyorsun\b', r'\bsen\b.{0,45}\bbilmiyorsun\b',
     r'\bhiçbir\s+şey\s+anlamıyorsun\b', r'\bhiçbir\s+şey\s+bilmiyorsun\b', r'\bbilgin\s+yok\b',
@@ -186,7 +244,29 @@ def status(load: bool = False) -> dict[str, Any]:
 
 
 def _has_any(patterns: list[str], text: str) -> bool:
-    return any(re.search(p, text, flags=re.IGNORECASE | re.DOTALL) for p in patterns)
+    # Kullanıcılar bazen küfürleri nokta/işaret veya basit leet yazımıyla böler
+    # ("b.o.k", "b0k"). Normal metin korunur; yalnız tespit için ek biçimler aranır.
+    normalized = _normalize(text)
+    forms = (normalized, _detection_text(text))
+    return any(
+        re.search(p, candidate, flags=re.IGNORECASE | re.DOTALL)
+        for candidate in forms
+        for p in patterns
+    )
+
+
+def _pick_variant(seed: str, variants: tuple[str, ...]) -> str:
+    """Aynı kategori için kontrollü çeşitlilik sağlar; rastgelelik kullanmaz."""
+    if len(variants) == 1:
+        return variants[0]
+    digest = hashlib.sha256(seed.encode('utf-8')).digest()
+    return variants[int.from_bytes(digest[:4], 'big') % len(variants)]
+
+
+def _detection_text(text: str) -> str:
+    normalized = _normalize(text)
+    deobfuscated = normalized.translate(str.maketrans({'0': 'o', '1': 'i', '3': 'e', '4': 'a', '@': 'a', '$': 's'}))
+    return re.sub(r'(?<=\w)[^\w\s]+(?=\w)', '', deobfuscated)
 
 
 def _normalize(text: str) -> str:
@@ -357,6 +437,8 @@ def analyze_message(text: str) -> list[str]:
         signals.append('hakaret/küfür')
     if _has_any(DIRECT_ATTACK_PATTERNS, t):
         signals.append('kişiye yönelik saldırı')
+    if _has_any(THREAT_PATTERNS, t):
+        signals.append('tehdit/şiddet')
     if _is_sarcastic(text):
         signals.append('ironi/sarkazm')
     if '?' in text:
@@ -393,7 +475,7 @@ def _strip_attack_shell(text: str) -> str:
     cleaned = re.sub(r'\s+([,.;!?])', r'\1', cleaned)
     cleaned = re.sub(r'([,;])\s*([,;])+', r'\1', cleaned)
     cleaned = re.sub(r'^\s*(?:ya|yahu|ulan|lan|be)\b[ ,;:-]*', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip(' ,;:-')
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip(' ,;:.-!?')
     return cleaned
 
 
@@ -457,7 +539,7 @@ def _ban_subject(text: str, context: str) -> tuple[str, str]:
 def _source_attack(text: str, signals: list[str]) -> bool:
     t = _normalize(text)
     return 'kaynak/kanıt vurgusu' in signals and (
-        'hakaret/küfür' in signals or 'kişiye yönelik saldırı' in signals or any(m in t for m in SOURCE_ACCUSATION_MARKERS)
+        'hakaret/küfür' in signals or 'kişiye yönelik saldırı' in signals or any(m in t for m in SOURCE_ATTACK_MARKERS)
     )
 
 
@@ -478,8 +560,34 @@ def _expertise_attack(text: str, signals: list[str]) -> bool:
     return ('kişiye yönelik saldırı' in signals or 'hakaret/küfür' in signals) and any(m in t for m in EXPERTISE_ATTACK_MARKERS)
 
 
+def _has_attack(signals: list[str]) -> bool:
+    return any(signal in signals for signal in ('hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet'))
+
+
+def _opinion_attack(text: str, signals: list[str]) -> bool:
+    """"Fikrin bile yok" gibi kişiyi doğrudan küçümseyen ifadeleri ayırır."""
+    return _has_attack(signals) and _has_any(PERSONAL_DISMISSAL_PATTERNS, text)
+
+
+def _is_contentless_attack_remainder(text: str) -> bool:
+    """Saldırı sökülünce geriye yalnız anlamsız bir kalıp kalmadığını denetler."""
+    compact = _normalize(text).strip(' ,;:.-!?')
+    return compact in {
+        'bir yorum', 'bir yorum olmuş', 'yorum', 'yorum olmuş',
+        'bir fikir', 'fikir', 'bir şey', 'bir şey olmuş', 'biri',
+        'buradan', 'başından', 'işine',
+    }
+
+
 def _clean_is_already_constructive(text: str, signals: list[str]) -> bool:
-    return ('hakaret/küfür' not in signals and 'kişiye yönelik saldırı' not in signals and 'bağlamı yeniden değerlendirme talebi' not in signals and 'ironi/sarkazm' not in signals)
+    return (
+        not _has_attack(signals)
+        and 'bağlamı yeniden değerlendirme talebi' not in signals
+        and 'konuya katkı eleştirisi' not in signals
+        and not _source_attack(text, signals)
+        and not _contribution_attack(text, signals)
+        and 'ironi/sarkazm' not in signals
+    )
 
 
 def _numeric_claim_rewrite(text: str) -> str:
@@ -502,7 +610,7 @@ def _deterministic_rewrite(text: str, context: str, signals: list[str]) -> tuple
     clean = _strip_attack_shell(t)
     stance = _ban_stance(t)
     obj, usage_subject = _ban_subject(t, context)
-    has_attack = 'hakaret/küfür' in signals or 'kişiye yönelik saldırı' in signals
+    has_attack = _has_attack(signals)
 
     # 0) Zaten yapıcı/temizse: soru ve görüşü aynen koru. Sadece kaynak işareti olmayan
     # açık sayısal iddiaya doğrulama isteği eklenir.
@@ -562,8 +670,11 @@ def _deterministic_rewrite(text: str, context: str, signals: list[str]) -> tuple
             q = re.sub(r'^\s*(?:peki|ama|ve)\s+', '', q, flags=re.IGNORECASE)
             return _question_sentence(q), 'source-question', True
         return (
-            'Paylaşılan bilgilerin yeterince kaynakla desteklenmediğini düşünüyorum. '
-            'İddiaları dayandıkları kaynaklarla birlikte paylaşabilir misin?',
+            _pick_variant(t, (
+                'Paylaşılan bilgilerin yeterince kaynakla desteklenmediğini düşünüyorum. İddiaları dayandıkları kaynaklarla birlikte paylaşabilir misin?',
+                'Bu iddianın dayanağını görebilmek için kullandığın kaynakları paylaşabilir misin?',
+                'Bilginin güvenilirliğini değerlendirebilmemiz için kaynak veya kanıt gösterebilir misin?',
+            )),
             'source-criticism', True,
         )
 
@@ -578,16 +689,56 @@ def _deterministic_rewrite(text: str, context: str, signals: list[str]) -> tuple
     # 6) Konuya katkı sağlamama eleştirisi.
     if _contribution_attack(t, signals):
         return (
-            'Yorumunun tartışmanın konusuna yeterince katkı sağlamadığını düşünüyorum. '
-            'Konuyla ilgili görüşünü daha somut biçimde açıklayabilir misin?',
+            _pick_variant(t, (
+                'Yorumunun tartışmanın konusuna yeterince katkı sağlamadığını düşünüyorum. Konuyla ilgili görüşünü daha somut biçimde açıklayabilir misin?',
+                'Bu yorumun tartışmaya katkısını göremiyorum. Konuyla ilgili hangi düşünceyi savunduğunu ve gerekçeni açıklar mısın?',
+                'Kişiye değil, yorumun içeriğine odaklanalım. Konuya ilişkin görüşünü ve dayanaklarını daha açık paylaşabilir misin?',
+            )),
             'contribution-criticism', True,
+        )
+
+    # Kısa suçlamaları ve kovucu emirleri aynı genel cümleye düşürme; saldırı
+    # türüne uygun, yine de konu/gerekçe eksenini açan güvenli bir karşılık ver.
+    if (not clean or _is_contentless_attack_remainder(clean)) and _has_any(ACCUSATION_ATTACK_PATTERNS, t):
+        return (
+            _pick_variant(t, (
+                'Bu iddianın doğru olmadığını düşünüyorsan, hangi bilgiye dayandığını açıkça paylaşabilir misin?',
+                'Kişiye yönelik suçlama yerine, yanlış olduğunu düşündüğün noktayı ve dayanağını belirtelim.',
+                'Farklı düşündüğün noktayı somut bilgi veya gerekçelerle açıklayabilir misin?',
+            )),
+            'accusation-deescalation', True,
+        )
+
+    if (not clean or _is_contentless_attack_remainder(clean)) and _has_any(BOUNDARY_ATTACK_PATTERNS, t):
+        return (
+            _pick_variant(t, (
+                'Tartışmayı kişisel ifadelerle kesmek yerine, konuya ilişkin görüş ve gerekçeleri konuşalım.',
+                'Saygılı bir üslupla konuya dönelim; ileri sürdüğün düşünceyi ve dayanaklarını açıklar mısın?',
+                'Kişiyi uzaklaştırmak yerine, anlaşmazlık yaşadığımız noktayı somut gerekçelerle ele alalım.',
+            )),
+            'boundary-deescalation', True,
+        )
+
+    # "Fikrin bile yok", "senden bir bok olmaz" gibi küçümsemeler ayrı ele alınır;
+    # artık nötr mesaj gibi aynen döndürülmez ve kalan konu omurgası korunur.
+    if _opinion_attack(t, signals):
+        return (
+            _pick_variant(t, (
+                'Bu konu hakkında yeterli bilgi veya gerekçe sunulmadığını düşünüyorum. Görüşünü daha açık ve somut biçimde paylaşabilir misin?',
+                'Kişiyi değerlendirmek yerine, bu konuya ilişkin düşünceni ve gerekçelerini tartışmayı tercih ederim. Görüşünü daha açık paylaşabilir misin?',
+                'Bu konudaki görüşünü kişiselleştirmeden, dayandığın bilgi veya gerekçelerle açıklayabilir misin?',
+            )),
+            'opinion-dismissal', True,
         )
 
     # 5) Bilgi/anlayışa yönelik kişisel saldırı.
     if _expertise_attack(t, signals):
         return (
-            'Bu görüşün gerekçesini yeterince ikna edici bulmuyorum. '
-            'Dayandığın bilgi, örnek veya gerekçeleri daha açık paylaşabilir misin?',
+            _pick_variant(t, (
+                'Bu görüşün gerekçesini yeterince ikna edici bulmuyorum. Dayandığın bilgi, örnek veya gerekçeleri daha açık paylaşabilir misin?',
+                'Bu konuda farklı düşünüyorum. Görüşünü destekleyen bilgi, örnek veya gerekçeleri paylaşabilir misin?',
+                'Kişisel değerlendirme yerine görüşün dayanağını konuşalım. Bu düşünceye hangi bilgi veya gerekçelerle ulaştığını açıklar mısın?',
+            )),
             'expertise-attack', True,
         )
 
@@ -601,17 +752,32 @@ def _deterministic_rewrite(text: str, context: str, signals: list[str]) -> tuple
 
     # 8) Geriye anlamlı bir içerik kaldıysa içerik omurgasını koru. Bu dalda model ancak
     # temizlenmiş cümle çok kırık/çok kısa ise devreye girebilir.
-    if has_attack and clean:
+    if has_attack and clean and not _is_contentless_attack_remainder(clean):
         clean = re.sub(r'^\s*(?:ama|ancak|ve|ya)\s+', '', clean, flags=re.IGNORECASE)
         if len(clean.split()) >= 5:
             return _sentence(clean), 'attack-shell-removed', True
         if len(clean.split()) >= 2:
             return _sentence(clean), 'ambiguous-short', False
 
+    if 'tehdit/şiddet' in signals:
+        return (
+            _pick_variant(t, (
+                'Tehdit içeren bir üslupla sağlıklı bir tartışma yürütülemiyor. Görüşleri sakin ve somut biçimde değerlendirelim.',
+                'Tartışmayı tehdit üzerinden değil, konuya ilişkin gerekçeler üzerinden sürdürmeyi tercih ederim.',
+                'Kişiye yönelik tehditleri bir yana bırakıp, görüşün dayanaklarını konuşmak daha yapıcı olur.',
+            )),
+            'threat-deescalation', True,
+        )
+
     # 9) Saf saldırı: yeni görüş uydurma; yalnızca tartışmayı görüş/gerekçe eksenine çek.
     if has_attack:
         return (
-            'Bu görüşe katılmıyorum. Eleştirimi kişiye değil, ileri sürülen görüşün gerekçelerine odaklamak istiyorum.',
+            _pick_variant(t, (
+                'Bu görüşe katılmıyorum. Eleştirimi kişiye değil, ileri sürülen görüşün gerekçelerine odaklamak istiyorum.',
+                'Kişiye yönelik ifadeler yerine, görüşün kendisini ve dayanaklarını tartışmayı tercih ederim.',
+                'Tartışmayı hakaret üzerinden değil, somut görüş ve gerekçeler üzerinden sürdürmek daha yararlı olur.',
+                'Bu üslupla ilerlemek yerine, konuya ilişkin düşünce ve gerekçeleri sakin biçimde konuşalım.',
+            )),
             'pure-attack', True,
         )
 
@@ -713,7 +879,7 @@ def _candidate_valid(original: str, candidate: str, signals: list[str]) -> tuple
         return False, 'çıktı gereksiz uzun'
     if any(m in cl for m in PROMPT_LEAK_MARKERS):
         return False, 'prompt/ara metin sızıntısı veya doğal olmayan kalıp'
-    if _has_any(OFFENSIVE_PATTERNS, cl) or _has_any(DIRECT_ATTACK_PATTERNS, cl):
+    if _has_any(OFFENSIVE_PATTERNS, cl) or _has_any(DIRECT_ATTACK_PATTERNS, cl) or _has_any(THREAT_PATTERNS, cl):
         return False, 'kişiselleştirme temizlenmedi'
     if _has_bad_repetition(c):
         return False, 'tekrarlı/anlamsız üretim'
@@ -778,6 +944,8 @@ def _reason(signals: list[str], engine: str, decision_tag: str = '', validation_
     parts: list[str] = []
     if 'hakaret/küfür' in signals or 'kişiye yönelik saldırı' in signals:
         parts.append('kişisel saldırıyı çıkardı')
+    if 'tehdit/şiddet' in signals:
+        parts.append('tehdit içeren dili güvenli biçimde çıkardı')
     if 'bağlamı yeniden değerlendirme talebi' in signals:
         parts.append('konuyu yeniden değerlendirme talebini korudu')
     if 'konuya katkı eleştirisi' in signals and 'kaynak/kanıt vurgusu' not in signals:

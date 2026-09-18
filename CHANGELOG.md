@@ -12,9 +12,14 @@
   azaltılmış hareket ve varsayılan gizlilik modu eklendi.
 - `/api/system/readiness` SQLite, şema, demo, 8 analiz çıktısı ve Köprü
   sınırını denetler; model yüklenmesi zorunlu değildir.
+- Yanıt Koçu; "fikrin bile yok", "senden bir bok olmaz", küçümseme,
+  nokta/leet yazımıyla gizlenmiş saldırı ve tehditleri de güvenli biçimde
+  ayırır. Kişisel saldırı temizlenirken konu/görüş omurgası korunur; aynı
+  saldırı ailesinde tekrarlanabilir güvenli ifade çeşitliliği kullanılır.
 - Next.js `15.5.25`, `postcss 8.5.28` ve `sharp 0.35.4` güvenlik sabitlemeleri;
   üretim `npm audit` sonucu 0 açık.
-- 54 test paketi ve 1.240/1.240 otomatik kontrol, TypeScript, üretim
+- 54 test paketi ve güncellenmiş Yanıt Koçu güvenlik matrisiyle 1.246/1.246
+  otomatik kontrol, TypeScript, üretim
   derlemesi, Python compileall ve 35/35 API kabul dumanı başarılıdır.
 - GitHub teslim hedefi main dalıdır; Actions kalite kapısı push sonrasında
   yeniden çalışır.

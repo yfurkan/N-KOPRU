@@ -1,6 +1,6 @@
 N-KÖPRÜ v1.5.0 — GITHUB MAIN ÖNCESİ YEREL TESLİM DENETİMİ
-Tarih: 2026-09-17
-Kaynak durumu: main dalına push öncesi temiz kaynak paketi
+Tarih: 2026-09-18
+Kaynak durumu: Yanıt Koçu düzeltmeleri eklenmiş v1.5.0 kaynak paketi
 
 Bu rapor, bu klasördeki kaynak kodun yerel doğrulamasıdır. GitHub Actions
 sonucu değildir; main dalına push sonrasında aynı kalite kapısı yeniden
@@ -13,14 +13,15 @@ python -m unittest discover -s tests -p "run_*.py" -v
 
 Sonuç:
 - 54 test paketi
-- 1.240 / 1.240 başarılı
+- 1.246 / 1.246 başarılı
 - Hata: 0
 
 Kapsam:
 - analiz, konu bağlamı, görüş/iddia/soru tutarlılığı ve SQLite kalıcılığı
 - Sunum Modu readiness ve v1.5.0 arayüz sözleşmeleri
 - Yanıt Koçu güvenlik, anlam koruma, ironi, koşullu görüş, sayı ve kaynak
-  talebi regresyonları
+  talebi regresyonları; kişisel küçümseme, gizlenmiş saldırı, tehdit ve cevap
+  çeşitliliği kontrolleri
 - sabit kontrollü demo senaryosu, iki faz, sıra ve idempotency
 - gerçek kullanıcı modunun reddedilmesi, gerçek metrik ve CSV yolunun kapalı
   kalması
