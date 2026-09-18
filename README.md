@@ -295,12 +295,6 @@ Bu sayı v1.5.0 için gerçek kullanıcı başarısı değildir. v1.5.0’da gö
 gösterir, kullanıcı etkisini ölçmez. Kaynak kodu bu ayrımı arayüzde ve
 raporlarda korur.
 
-## GitHub’a gönderme
-
-Windows üzerinde depo oluşturma, `main` dalına ilk commit’i atma, push sonrası
-kontrol ve jüriye verilecek bağlantı için
-[`docs/GITHUB_MAIN_TESLIM_REHBERI.md`](docs/GITHUB_MAIN_TESLIM_REHBERI.md)
-dosyasını uygulayın.
 
 ---
 
