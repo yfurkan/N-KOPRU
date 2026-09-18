@@ -304,7 +304,7 @@ class CoachRegression(unittest.TestCase):
         client = TestClient(app)
         health = client.get('/health')
         self.assertEqual(health.status_code, 200)
-        self.assertEqual(health.json()['version'], '1.4.0')
+        self.assertEqual(health.json()['version'], '1.5.0')
 
         res = client.post('/api/rewrite', json={
             'text': 'Beynini evde unutmuşsun, konuyu baştan oku da tekrar yanıt ver.',
@@ -317,6 +317,13 @@ class CoachRegression(unittest.TestCase):
         self.assertIn('engine', body)
         self.assertIn('elapsed_ms', body)
         self.assert_safe(body['suggestion'])
+
+        blank = client.post('/api/rewrite', json={'text': '   ', 'context': CTX, 'use_ai': True})
+        self.assertEqual(blank.status_code, 422)
+        oversized = client.post('/api/rewrite', json={'text': 'x' * 2001, 'context': CTX, 'use_ai': True})
+        self.assertEqual(oversized.status_code, 422)
+        oversized_context = client.post('/api/rewrite', json={'text': 'Kısa bir görüş.', 'context': 'x' * 4001, 'use_ai': True})
+        self.assertEqual(oversized_context.status_code, 422)
 
 
     def test_19_generated_fuzz_safety(self):
@@ -591,7 +598,7 @@ def main() -> int:
     elapsed = time.perf_counter() - start
 
     summary = {
-        'version': '1.4.0',
+        'version': '1.5.0',
         'tests_run': result.testsRun,
         'failures': len(result.failures),
         'errors': len(result.errors),
@@ -603,9 +610,6 @@ def main() -> int:
         'balanced_matrix_cases': 12,
         'total_scenario_checks': 552,
     }
-    (ROOT / 'YANIT_KOCU_TEST_SONUCLARI.json').write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8'
-    )
     print('\nSUMMARY:', json.dumps(summary, ensure_ascii=False))
     return 0 if result.wasSuccessful() else 1
 

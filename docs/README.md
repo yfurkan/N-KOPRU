@@ -1,24 +1,44 @@
 # N-KÖPRÜ dokümantasyonu
 
-Bu klasör, çalışan `v1.4.0` tesliminin teknik kanıtlarını ve ürün görsellerini
-uygulama kaynak kodundan ayrı, takip edilebilir bir yapıda toplar.
+Bu klasör, GitHub main dalına gönderilecek N-KÖPRÜ v1.5.0 finalist
+kaynağının çalıştırma, inceleme ve doğrulama belgelerini içerir.
 
-- [`test-reports/`](test-reports/): Gerçek modül, regresyon, kalıcılık,
-  denetim, geçiş ve benchmark çıktıları.
-- [`release-notes/`](release-notes/): Sürüm bazlı teslim notları.
-- [`screenshots/`](screenshots/): Çalışan ana ekran ve Teknik Doğrulama
-  görüntüleri.
-- [`architecture/`](architecture/): `v1.4.0` uygulamasının gerçek mimari
-  diyagramı.
-- [`CONFIGURATION.md`](CONFIGURATION.md): İsteğe bağlı ortam değişkenleri ve
-  platformdan bağımsız çalışma ayarları.
+## Güncel belgeler
 
-## v1.4.0 teslim kanıtları
+- FINALIST_RUNBOOK.md: uygulamayı çalıştırma ve jüri demosu akışı.
+- CONTROLLED_DEMO_PROTOCOL.md: gerçek kullanıcı verisi toplamayan sabit demo
+  sınırı.
+- GITHUB_MAIN_TESLIM_REHBERI.md: boş GitHub deposu oluşturma, main commit’i,
+  push ve temiz kopya kontrolü.
+- CONFIGURATION.md: yerel ortam değişkenleri ve isteğe bağlı modeller.
+- PRIVACY_AND_AI_TRANSPARENCY.md: veri saklama ve yapay zekâ sınırları.
+- architecture/technical-architecture-v1.5.0.svg: güncel teknik mimari.
+- test-reports/V1_5_0_TEST_RAPORU.txt: bu kaynak paketinin push öncesi yerel
+  doğrulama özeti.
 
-- [İnsan tarafından okunabilir test raporu](test-reports/V1_4_0_TEST_RAPORU.txt)
-- [Makine tarafından okunabilir test sonuçları](test-reports/V1_4_0_TEST_SONUCLARI.json)
-- [Sürüm notları](release-notes/V1_4_0_RELEASE_NOTES.md)
-- [Bütün sürümlerin ayrıntılı geçmişi](../CHANGELOG.md)
+## Klasörler
 
-Görüntüler çalışan uygulamadan ve teslim teknik raporundan alınmıştır;
-kişisel masaüstü, tarayıcı sekmeleri ve sistem bildirimleri içermez.
+- architecture/: güncel mimari çizim ve arşivlenmiş eski çizimler.
+- archive/: v1.0–v1.4 sürümlerine ait tarihsel rapor ve sürüm notları.
+- release-notes/: sürüm bazlı değişiklik notları.
+- archive/screenshots-v1.4.0/: önceki sürümün tarihsel ekran görüntüleri.
+- test-reports/: otomatik test sonuçları ve tarihsel raporlar.
+
+## Tarihsel kayıtların okunması
+
+docs/archive altındaki V1_4_0, V1_4_1, V1_4_2 ve önceki sürüm dosyaları
+önceki teknik rapor ve geliştirme kanıtlarıdır. Güncel çalışan kaynak
+v1.5.0’dır; arşiv dosyalarındaki sürüm, dal veya test akışı bu teslimin
+çalıştırma talimatı olarak kullanılmamalıdır.
+
+## Doğrulama özeti
+
+- Backend: 54 test paketi, 1.240 / 1.240 başarılı.
+- Frontend: production build ve TypeScript kontrolü başarılı.
+- Production bağımlılık denetimi: 0 açık.
+- API kabul kontrolü: scripts/api_smoke.py ile 35 / 35.
+- Sistem readiness: 5 zorunlu kontrolün 5’i hazır.
+
+Bu sonuçlar proje içi yazılım doğrulamasıdır. Gerçek kullanıcı araştırması,
+canlı sosyal platform bağlantısı, saha etkisi veya bağımsız akademik benchmark
+sonucu değildir.

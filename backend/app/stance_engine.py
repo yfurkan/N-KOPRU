@@ -96,15 +96,73 @@ POSITIVE_DELEGATION_PATTERN = re.compile(
 EVIDENCE_GAP_PATTERNS = (
     r"kaynak\s+(?:belirtilm|gösterilm|paylaşılm|sunulm|açıklanm)",
     r"(?:kaynak|veri|kanıt|araştırma|örneklem)\s+(?:olmadan|eksik|yok)",
-    r"(?:kaynak|veri|kanıt|örneklem)[^.?!]{0,45}(?:gerek|paylaşılmalı|sunulmalı)",
+    r"(?:kaynak|veri|kanıt|araştırma|örneklem|çalışma)"
+    r"[^.?!]{0,55}(?:gerek|paylaşılmalı|sunulmalı|açıklanmalı|yayımlanmalı)",
+    r"(?:oran|yüzde|istatistik|iddia|sonuç|rakam)"
+    r"[^.?!]{0,55}(?:doğrulanamaz|kanıtlanamaz|güvenilemez|sınanamaz|teyit edilemez)",
 )
 EVIDENCE_CLAIM_SIGNALS = (
     "yüzde", "oran", "istatistik", "veri", "iddia", "örneklem",
     "araştırma", "kanıt", "sonuç", "ölçüm", "rakam", "sayısal",
 )
+EXPLICIT_POLICY_DECISION_PATTERN = re.compile(
+    r"\b(?:kesinlikle\s+yasak\w*|yasaklanmalı|engellenmeli|"
+    r"kapatılmalı|serbest\s+olmalı|tamamen\s+kaldırılmalı)\b"
+)
+
+CONTINUITY_SUBJECT_PATTERN = re.compile(
+    r"\b(?:erişim\w*|hakk?\w*|seçim\w*|özgürlü\w*|hizmet\w*|"
+    r"uygulama\w*|kullanım\w*|çalışma\w*|servis\w*|hat\w*|"
+    r"iletişim\w*|yararlanma\w*)\b"
+)
+CONTINUITY_ACTION_PATTERN = re.compile(
+    r"\b(?:devam\w*|sür(?:me|dür|mesi|meli|dürül)\w*|"
+    r"koru(?:ma|nma|nması|malı)\w*)\b"
+)
+CONTINUITY_ENDORSEMENT_PATTERN = re.compile(
+    r"\b(?:yanayım|yanındayım|savun\w*|istiyor\w*|destekli\w*|"
+    r"sürmeli|devam\s+etmeli|korunmalı)\b"
+)
+CONTINUITY_REJECTION_PATTERN = re.compile(
+    r"\b(?:karşıyım|karşı\s+çık\w*|sürmemeli|yasaklan\w*|"
+    r"kapatıl\w*|engellen\w*|sonlandırıl\w*|iptal\s+edil\w*|"
+    r"kaldırıl\w*)\b"
+)
+
+EXCLUSIVE_WORKPLACE_PATTERN = re.compile(
+    r"\b(?:yalnızca|sadece|mutlaka|mecburen|zorunlu\s+olarak)"
+    r"\s+(?:ofis\w*|iş\s*yeri\w*|işyer\w*|yüz\s+yüze|fiziksel\s+olarak)\b"
+)
+MANDATORY_ACTION_PATTERN = re.compile(
+    r"\b(?:yapılmalı|gerçekleştirilmeli|çalışılmalı|bulunmalı|"
+    r"olmalı|toplanmalı|katılmalı|dönülmeli|yürütülmeli)\b"
+)
+REMOTE_TOPIC_PATTERN = re.compile(
+    r"\b(?:uzaktan|evden|hibrit|esnek|mekân|mekan|çalışma)\b"
+)
 
 
-def semantic_guardrail_label(text: str) -> tuple[str | None, str | None]:
+def _positive_conditional_signal(text: str) -> bool:
+    """Olumsuz kökleri olumlu denetim/kural koşulu olarak yorumlamaz."""
+    for signal in CONDITIONAL_SIGNALS:
+        if signal == "denetim":
+            if re.search(r"\bdenetim(?!siz)\w*", text):
+                return True
+        elif signal == "kural":
+            if re.search(r"\bkural(?!sız)\w*", text):
+                return True
+        elif signal == "şart":
+            if re.search(r"\bşart(?!sız)\w*", text):
+                return True
+        elif signal in text:
+            return True
+    return False
+
+
+def semantic_guardrail_label(
+    text: str,
+    title: str = "",
+) -> tuple[str | None, str | None]:
     """Açık anlamı model yön yanlılığıyla çelişen yorumları önce sabitler."""
     lowered = text.lower().strip()
     personal_use = any(signal in lowered for signal in PERSONAL_USE_SIGNALS)
@@ -117,8 +175,29 @@ def semantic_guardrail_label(text: str) -> tuple[str | None, str | None]:
 
     evidence_gap = any(re.search(pattern, lowered) for pattern in EVIDENCE_GAP_PATTERNS)
     evidence_claim = any(signal in lowered for signal in EVIDENCE_CLAIM_SIGNALS)
-    if evidence_gap and evidence_claim:
+    if (
+        evidence_gap
+        and evidence_claim
+        and not EXPLICIT_POLICY_DECISION_PATTERN.search(lowered)
+    ):
         return "Soru / Tarafsız", "anlamsal tutarlılık: kaynak/veri eleştirisi"
+
+    if (
+        CONTINUITY_SUBJECT_PATTERN.search(lowered)
+        and CONTINUITY_ACTION_PATTERN.search(lowered)
+        and CONTINUITY_ENDORSEMENT_PATTERN.search(lowered)
+        and not CONTINUITY_REJECTION_PATTERN.search(lowered)
+        and not _positive_conditional_signal(lowered)
+    ):
+        return "Destekleyen", "anlamsal tutarlılık: erişim ve süreklilik desteği"
+
+    if (
+        title
+        and REMOTE_TOPIC_PATTERN.search(title.casefold())
+        and EXCLUSIVE_WORKPLACE_PATTERN.search(lowered)
+        and MANDATORY_ACTION_PATTERN.search(lowered)
+    ):
+        return "Karşı / Sınırlayıcı", "anlamsal tutarlılık: zorunlu fiziksel çalışma"
 
     return None, None
 
@@ -193,20 +272,23 @@ def status(load: bool = False) -> dict:
     }
 
 
-def _structural_label(text: str) -> tuple[str | None, str | None]:
+def _structural_label(
+    text: str,
+    title: str = "",
+) -> tuple[str | None, str | None]:
     """Yalnızca yüksek kesinlikli sinyallerde hızlı karar verir."""
     t = text.lower().strip()
 
     if "?" in text:
         return "Soru / Tarafsız", "yapısal soru sinyali"
 
-    guarded_label, guardrail_reason = semantic_guardrail_label(text)
+    guarded_label, guardrail_reason = semantic_guardrail_label(text, title)
     if guarded_label is not None:
         return guarded_label, guardrail_reason
 
     # Koşullu ifadeyi önce değerlendiriyoruz; "zarar" gibi sözcükler koşullu
     # cümle içinde geçse bile doğrudan yasakçı etikete kaymasın.
-    if any(signal in t for signal in CONDITIONAL_SIGNALS):
+    if _positive_conditional_signal(t):
         return "Koşullu / Dengeli", "yüksek kesinlikli koşul/kural sinyali"
 
     if any(signal in t for signal in SUPPORT_SIGNALS):
@@ -237,7 +319,7 @@ def classify_stances(title: str, comments: Iterable) -> tuple[list[dict], dict]:
     sequences = []
 
     for comment in comments:
-        label, rule_engine = _structural_label(comment.text)
+        label, rule_engine = _structural_label(comment.text, title)
         if label is not None:
             ready[comment.id] = {
                 "comment_id": comment.id,

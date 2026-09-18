@@ -1,0 +1,42 @@
+{
+  "version": "1.4.1",
+  "unchanged_submission_tag": "v1.4.0-teknofest-final",
+  "test_packages": 46,
+  "previous_regression_tests": 808,
+  "new_regression_tests": 172,
+  "tests_run": 980,
+  "failures": 0,
+  "errors": 0,
+  "successful": true,
+  "new_test_packages": {
+    "run_stance_semantics_regression.py": 108,
+    "run_stance_semantics_evaluation_regression.py": 38,
+    "run_stance_semantics_ui_contract.py": 26
+  },
+  "unseen_regression_sentences": 42,
+  "controlled_scenario_evaluation": {
+    "dataset_sample_count": 80,
+    "correct_count": 80,
+    "error_count": 0,
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "structural_decision_count": 77,
+    "transformer_inference_count": 3,
+    "semantic_guardrail_count": 13,
+    "deterministic_test_model_used": true,
+    "real_model_output_may_vary": true,
+    "previous_errors_informed_rule_calibration": true,
+    "is_independent_holdout": false,
+    "is_external_benchmark": false
+  },
+  "frontend": {
+    "typescript_no_emit": "passed",
+    "nextjs_production_build": "passed"
+  },
+  "preserved_demo_invariants": {
+    "source_awareness_percent": 25,
+    "open_question_comment_ids": [6, 13],
+    "maximum_bridge_question_words": 28
+  },
+  "hardware_specific_dependency": false
+}

@@ -31,7 +31,7 @@ SUPPORT_WORDS = {
 }
 OPPOSE_WORDS = {
     'katılmıyorum', 'karşıyım', 'yanlış', 'yasak', 'zararlı', 'tehlikeli', 'sorun',
-    'riskli', 'olumsuz', 'engellenmeli'
+    'riskli', 'olumsuz', 'engellenmeli', 'ciddi problem'
 }
 CONDITIONAL_WORDS = {
     'kontrollü', 'koşullu', 'ancak', 'ama', 'şartıyla', 'şart', 'denetim', 'kural',
@@ -76,18 +76,28 @@ def deduplicate_comments(comments, demo_mode: bool = False):
     return result
 
 
-def classify_viewpoint_heuristic(text: str) -> str:
+def classify_viewpoint_heuristic(text: str, title: str = '') -> str:
     t = text.lower()
     if '?' in text:
         return 'Soru / Tarafsız'
 
-    guarded_label, _ = semantic_guardrail_label(text)
+    guarded_label, _ = semantic_guardrail_label(text, title)
     if guarded_label is not None:
         return guarded_label
 
     support = sum(1 for word in SUPPORT_WORDS if word in t)
     oppose = sum(1 for word in OPPOSE_WORDS if word in t)
-    conditional = sum(1 for word in CONDITIONAL_WORDS if word in t)
+    conditional = sum(
+        1
+        for word in CONDITIONAL_WORDS
+        if (
+            bool(re.search(rf'\b{re.escape(word)}(?!siz|sız)\w*', t))
+            if word in {'denetim', 'kural', 'şart'}
+            else bool(re.search(rf'\b{re.escape(word)}\b', t))
+            if word in {'ama', 'ancak'}
+            else word in t
+        )
+    )
 
     if conditional >= max(support, oppose) and conditional > 0:
         return 'Koşullu / Dengeli'
@@ -113,14 +123,17 @@ def build_viewpoints_from_details(details: list[dict], total: int) -> list[Viewp
     ]
 
 
-def build_viewpoints_heuristic(comments) -> tuple[list[Viewpoint], list[dict]]:
+def build_viewpoints_heuristic(
+    comments,
+    title: str = '',
+) -> tuple[list[Viewpoint], list[dict]]:
     details = [
         {
             'comment_id': c.id,
             'text': c.text,
-            'label': classify_viewpoint_heuristic(c.text),
+            'label': classify_viewpoint_heuristic(c.text, title),
             'confidence': 0.0,
-            'engine': semantic_guardrail_label(c.text)[1] or 'heuristik yedek',
+            'engine': semantic_guardrail_label(c.text, title)[1] or 'heuristik yedek',
         }
         for c in comments
     ]
@@ -184,7 +197,7 @@ def analyze_post(post: Post, demo_mode: bool = False, use_ai: bool = True) -> An
     if stance_raw:
         viewpoints = build_viewpoints_from_details(stance_raw, len(clean_comments))
     else:
-        viewpoints, stance_raw = build_viewpoints_heuristic(clean_comments)
+        viewpoints, stance_raw = build_viewpoints_heuristic(clean_comments, post.text)
         engine_info = dict(engine_info)
         engine_info['mode'] = 'heuristic-fallback'
         if use_ai:
@@ -228,7 +241,12 @@ def analyze_post(post: Post, demo_mode: bool = False, use_ai: bool = True) -> An
     repetition_rate = round(duplicates * 100 / max(1, len(post.comments)))
 
     ground_started = time.perf_counter()
-    common_ground_details, ground_info = build_common_ground(clean_comments, stance_details, claims)
+    common_ground_details, ground_info = build_common_ground(
+        clean_comments,
+        stance_details,
+        claims,
+        title=post.text,
+    )
     ground_profile_elapsed_ms = round((time.perf_counter() - ground_started) * 1000, 3)
     common_ground = [item.text for item in common_ground_details]
 
@@ -289,6 +307,9 @@ def analyze_post(post: Post, demo_mode: bool = False, use_ai: bool = True) -> An
     engine_info['stance_comment_count'] = len(stance_details)
     engine_info['viewpoint_engine'] = viewpoint_info['mode']
     engine_info['viewpoint_context'] = viewpoint_info['context']
+    engine_info['viewpoint_topic_key'] = viewpoint_info['topic_key']
+    engine_info['viewpoint_topic_subject'] = viewpoint_info['topic_subject']
+    engine_info['viewpoint_topic_specific'] = viewpoint_info['topic_specific']
     engine_info['viewpoint_cluster_count'] = viewpoint_info['cluster_count']
     engine_info['viewpoint_representative_count'] = viewpoint_info['representative_count']
     engine_info['viewpoint_model_comment_count'] = viewpoint_info['model_comment_count']
@@ -374,7 +395,7 @@ def analyze_post(post: Post, demo_mode: bool = False, use_ai: bool = True) -> An
                 'Demo veri setindeki tekrar yorumlar tekilleştirildi.',
                 f'{len(clean_comments)} benzersiz yorum analiz kapsamına alındı.',
                 f'{len(claims)} iddia adayı ve {len(open_questions)} açık soru görünür hâle getirildi.',
-                'Karşılaştırmalı değişim analizi için geçmiş anlık görüntü/veritabanı katmanı henüz bağlı değil.',
+                'API akışında bu analiz SQLite anlık görüntüsü olarak kaydedilir ve sonraki analiz gerçek değişimlerle karşılaştırılır.',
             ]
         ),
         engine=engine_info,

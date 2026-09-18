@@ -1,4 +1,4 @@
-"""N-KÖPRÜ v0.4.4 - Yanıt Koçu (ironi + dengeli görüş).
+"""N-KÖPRÜ v1.5.0 - Yanıt Koçu (ironi + dengeli görüş).
 
 Amaç:
 - kullanıcının ana görüşünü ve somut içeriğini korumak,
@@ -881,7 +881,7 @@ def rewrite_with_ai(text: str, context: str = '', use_ai: bool = True) -> dict[s
 
     deterministic, decision_tag, high_confidence = _deterministic_rewrite(clean, context, signals)
 
-    # v0.4.4 hızlı yol: zaten temiz mesajlar ve yüksek güvenli saldırı/iddia türleri için
+    # Finalist hızlı yol: zaten temiz mesajlar ve yüksek güvenli saldırı/iddia türleri için
     # küçük üretken modeli çalıştırmak hem kaliteyi düşürebiliyor hem CPU'da 15-25 sn gecikme ekliyordu.
     if USE_FAST_PATH and high_confidence:
         engine = 'preserve-safe' if deterministic == clean else 'hybrid-safe'

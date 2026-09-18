@@ -1,5 +1,6 @@
 {
-  "version": "0.4.4",
+  "version": "1.5.0",
+  "component": "Yanıt Koçu",
   "calls": 1000,
   "mean_ms": 0.366,
   "median_ms": 0.34,

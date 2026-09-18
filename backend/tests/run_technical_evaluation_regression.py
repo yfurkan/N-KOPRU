@@ -26,11 +26,11 @@ class TechnicalEvaluationRegressionTests(unittest.TestCase):
         return response.json()
 
     def test_01_health_reports_new_version(self):
-        self.assertEqual(self.client.get('/health').json()['version'], '1.4.0')
+        self.assertEqual(self.client.get('/health').json()['version'], '1.5.0')
 
     def test_02_status_exists_before_first_run(self):
         data = self.client.get('/api/evaluation').json()
-        self.assertEqual(data['version'], '1.4.0')
+        self.assertEqual(data['version'], '1.5.0')
         self.assertIsNone(data['latest_result'])
 
     def test_03_dataset_scope_is_honest(self):

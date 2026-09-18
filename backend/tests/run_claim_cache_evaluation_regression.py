@@ -51,7 +51,7 @@ class ClaimCacheEvaluationRegressionTests(unittest.TestCase):
         return response.json()
 
     def test_01_health_reports_v133(self):
-        self.assertEqual(self.client.get('/health').json()['version'], '1.4.0')
+        self.assertEqual(self.client.get('/health').json()['version'], '1.5.0')
 
     def test_02_first_demo_analysis_is_real_cold_model_run(self):
         usage = self.measure()['model_usage']['demo']

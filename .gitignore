@@ -8,6 +8,10 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
+coverage/
+.python-version
+*.log
+*.bak
 
 # Next.js ve Node.js bağımlılıkları/derleme çıktıları
 node_modules

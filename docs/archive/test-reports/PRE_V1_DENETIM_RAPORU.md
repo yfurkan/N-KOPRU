@@ -1,6 +1,6 @@
 # N-KÖPRÜ — v1.0 Öncesi Kaynak Kod Denetimi
 
-Denetlenen taban: `NKOPRU_v1_PRECHECK_SOURCE.zip`  
+Denetlenen taban: `NKOPRU_v1_PRECHECK_SOURCE.zip`
 Stabilizasyon sürümü: **v0.9.2**
 
 ## Sonuç

@@ -23,13 +23,15 @@ from .argument_engine import invalidate_claim_cache_for
 from .claim_cache import CACHE_MAX_ENTRIES
 from .database import connection, meta_get, meta_set, transaction
 from .demo import DEMO_POST
+from .evaluation_holdout import HOLDOUT_SCENARIOS, holdout_dataset_info
 from .evaluation_scenarios import SCENARIOS, scenario_dataset_info
 from .stance_engine import classify_stances, status as stance_status
+from .version import APP_VERSION
 
 
-APP_VERSION = '1.4.0'
 RESULT_META_KEY = 'technical_evaluation:last_result:v1'
 SCENARIO_RESULT_META_KEY = 'technical_evaluation:last_scenario_result:v1'
+HOLDOUT_RESULT_META_KEY = 'technical_evaluation:last_holdout_result:v1'
 DATASET_NAME = 'N-KÖPRÜ elle etiketlenmiş iç doğrulama seti'
 DATASET_VERSION = '2026.08.22-v1'
 LIMITATION = (
@@ -609,9 +611,11 @@ def _normalize_saved_result(result: dict | None, hardware: dict) -> dict | None:
 def get_technical_status() -> dict:
     latest = None
     scenario_latest = None
+    holdout_latest = None
     with connection() as conn:
         raw = meta_get(conn, RESULT_META_KEY)
         scenario_raw = meta_get(conn, SCENARIO_RESULT_META_KEY)
+        holdout_raw = meta_get(conn, HOLDOUT_RESULT_META_KEY)
     if raw:
         try:
             latest = json.loads(raw)
@@ -623,6 +627,12 @@ def get_technical_status() -> dict:
             scenario_latest = parsed if isinstance(parsed, dict) else None
         except (json.JSONDecodeError, TypeError):
             scenario_latest = None
+    if holdout_raw:
+        try:
+            parsed = json.loads(holdout_raw)
+            holdout_latest = parsed if isinstance(parsed, dict) else None
+        except (json.JSONDecodeError, TypeError):
+            holdout_latest = None
 
     model_status = stance_status(load=False)
     hardware = _hardware_diagnostics(model_status)
@@ -631,10 +641,12 @@ def get_technical_status() -> dict:
         'storage': 'sqlite',
         'dataset': _dataset_info(),
         'scenario_dataset': scenario_dataset_info(),
+        'holdout_dataset': holdout_dataset_info(),
         'model_status': model_status,
         'hardware': hardware,
         'latest_result': _normalize_saved_result(latest, hardware),
         'latest_scenario_result': scenario_latest,
+        'latest_holdout_result': holdout_latest,
     }
 
 
@@ -655,8 +667,15 @@ def _scenario_difficulty_metrics(predictions: list[dict]) -> list[dict]:
     ]
 
 
-def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
-    """Ürün görüş motorunu dört farklı konuda izole ve dürüstçe değerlendirir."""
+def _run_scenario_suite(
+    *,
+    use_ai: bool,
+    scenarios: tuple,
+    dataset: dict,
+    meta_key: str,
+    suite_label: str,
+) -> dict:
+    """Bir elle etiketli iç seti gerçek ürün motoruyla izole biçimde ölçer."""
     initial_model = stance_status(load=False)
     requested_effective_ai = bool(use_ai and initial_model.get('loaded'))
     predictions: list[dict] = []
@@ -664,7 +683,7 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
     started = time.perf_counter()
     classification_modes: list[str] = []
 
-    for scenario in SCENARIOS:
+    for scenario in scenarios:
         post = build_custom_post(
             scenario.title,
             [case.text for case in scenario.cases],
@@ -678,7 +697,7 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
             engine_mode = str(engine_info.get('mode', engine_mode))
 
         if not details:
-            _, details = build_viewpoints_heuristic(post.comments)
+            _, details = build_viewpoints_heuristic(post.comments, scenario.title)
             engine_mode = 'heuristic-fallback'
 
         classification_modes.append(engine_mode)
@@ -723,6 +742,10 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
             'errors': [item for item in topic_predictions if not item['correct']],
             'structural_decision_count': sum(item['model_confidence'] is None for item in topic_predictions),
             'transformer_inference_count': sum(item['model_confidence'] is not None for item in topic_predictions),
+            'semantic_guardrail_count': sum(
+                item['decision_engine'].startswith('anlamsal tutarlılık:')
+                for item in topic_predictions
+            ),
             'elapsed_ms': round((time.perf_counter() - scenario_started) * 1000, 2),
             'engine_mode': engine_mode,
         })
@@ -734,7 +757,7 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
         mode == 'hybrid-transformer' for mode in classification_modes
     )
     if not use_ai:
-        engine_note = 'Çok senaryolu doğrulama kullanıcı isteğiyle heuristik yedek motorla çalıştırıldı.'
+        engine_note = f'{suite_label} kullanıcı isteğiyle heuristik yedek motorla çalıştırıldı.'
     elif not initial_model.get('loaded'):
         engine_note = (
             'Transformer modeli bellekte hazır olmadığı için heuristik yedek motor '
@@ -754,7 +777,7 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
         'run_id': str(uuid4()),
         'created_at': datetime.now(timezone.utc).isoformat(),
         'version': APP_VERSION,
-        'dataset': scenario_dataset_info(),
+        'dataset': dataset,
         'sample_count': len(predictions),
         'scenario_count': len(scenario_results),
         'correct_count': sum(item['correct'] for item in predictions),
@@ -770,6 +793,10 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
         'label_distribution': dict(Counter(item['expected_label'] for item in predictions)),
         'structural_decision_count': structural_count,
         'transformer_inference_count': transformer_count,
+        'semantic_guardrail_count': sum(
+            item['decision_engine'].startswith('anlamsal tutarlılık:')
+            for item in predictions
+        ),
         'elapsed_ms': round((time.perf_counter() - started) * 1000, 2),
         'requested_ai': use_ai,
         'effective_ai': effective_ai,
@@ -779,13 +806,42 @@ def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
         'isolation_note': (
             'Senaryo doğrulaması kayıtlı kullanıcı tartışmalarını, analiz geçmişini, '
             'bildirimleri, mesajları, yer imlerini, listeleri ve referans ölçümünü değiştirmez.'
+            if meta_key == SCENARIO_RESULT_META_KEY else
+            'Ayrı kontrol, kayıtlı tartışmaları, analiz geçmişini, bildirimleri, '
+            'mesajları, yer imlerini, listeleri, referans ölçümünü ve önceki '
+            '80 örnekli kalibrasyon sonucunu değiştirmez.'
         ),
     }
 
     with transaction(immediate=True) as conn:
-        meta_set(conn, SCENARIO_RESULT_META_KEY, json.dumps(result, ensure_ascii=False))
+        meta_set(conn, meta_key, json.dumps(result, ensure_ascii=False))
 
     return result
+
+
+def run_scenario_evaluation(*, use_ai: bool = True) -> dict:
+    """Önceki dört konulu kalibrasyon setinin geriye uyumlu ölçümüdür."""
+    return _run_scenario_suite(
+        use_ai=use_ai,
+        scenarios=SCENARIOS,
+        dataset=scenario_dataset_info(),
+        meta_key=SCENARIO_RESULT_META_KEY,
+        suite_label='Çok senaryolu doğrulama',
+    )
+
+
+def run_holdout_evaluation(*, use_ai: bool = True) -> dict:
+    """Eski metinleri ve konuları kullanmayan ayrı proje içi kontrolü ölçer."""
+    dataset = holdout_dataset_info()
+    if not dataset['is_disjoint_from_calibration']:
+        raise ValueError('Ayrı kontrol seti önceki kalibrasyon metinleriyle çakışıyor.')
+    return _run_scenario_suite(
+        use_ai=use_ai,
+        scenarios=HOLDOUT_SCENARIOS,
+        dataset=dataset,
+        meta_key=HOLDOUT_RESULT_META_KEY,
+        suite_label='Ayrılmış yeni iç kontrol',
+    )
 
 
 def run_technical_evaluation(*, iterations: int = 5, use_ai: bool = True) -> dict:

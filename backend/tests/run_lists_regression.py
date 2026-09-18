@@ -14,7 +14,7 @@ class ListsRegression(unittest.TestCase):
     def test_01_health_version(self):
         r = self.client.get('/health')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['version'], '1.4.0')
+        self.assertEqual(r.json()['version'], '1.5.0')
 
     def test_02_seed_lists_exist(self):
         data = self.client.get('/api/lists').json()

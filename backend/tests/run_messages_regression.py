@@ -12,7 +12,7 @@ class MessagesRegression(unittest.TestCase):
     def test_01_health_version(self):
         r = self.client.get('/health')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['version'], '1.4.0')
+        self.assertEqual(r.json()['version'], '1.5.0')
 
     def test_02_conversations_available(self):
         r = self.client.get('/api/messages')
@@ -65,6 +65,9 @@ class MessagesRegression(unittest.TestCase):
         self.assertEqual(data['attachment']['post_id'], 1)
         self.assertEqual(data['attachment']['tab_index'], 7)
         self.assertEqual(data['attachment']['bridge_question'], payload['bridge_question'])
+        retry = self.client.post('/api/messages/bridge/share', json=payload)
+        self.assertEqual(retry.status_code, 200)
+        self.assertEqual(retry.json()['id'], data['id'])
 
     def test_08_bridge_persists_in_session(self):
         detail = self.client.get('/api/messages/2').json()

@@ -1,54 +1,51 @@
-# İsteğe bağlı yapılandırma
+# Yerel yapılandırma
 
-N-KÖPRÜ varsayılan ayarlarıyla yerel CPU üzerinde çalışır. Aşağıdaki ortam
-değişkenleri yalnızca model, veritabanı veya API adresini değiştirmek
-gerektiğinde kullanılmalıdır.
+N-KÖPRÜ v1.5.0 varsayılan ayarlarıyla internet gerektirmeyen yapısal yedek
+motor üzerinden çalışır. Aşağıdaki seçenekler yalnızca yerel çalışma
+adresini, SQLite konumunu veya isteğe bağlı model katmanını değiştirmek için
+kullanılır.
 
-## Backend
+## Backend değişkenleri
 
-| Ortam değişkeni | Varsayılan | Açıklama |
+| Değişken | Varsayılan | Kullanım |
 |---|---|---|
-| `N_KOPRU_AI_MODEL` | `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` | Hibrit görüş ve belirsiz iddia analizinde kullanılan Transformer modeli |
-| `N_KOPRU_AI_BATCH_SIZE` | `4` | Uygun olduğunda işlenecek model çıkarımı grup boyutu |
-| `N_KOPRU_COACH_MODEL` | `Qwen/Qwen2.5-0.5B-Instruct` | İsteğe bağlı Yanıt Koçu üretken modeli |
-| `N_KOPRU_COACH_MAX_NEW_TOKENS` | `48` | Yanıt Koçu için azami yeni token sayısı |
-| `N_KOPRU_COACH_FAST_PATH` | `1` | Yüksek güvenli durumlarda hızlı yapısal yanıt yolunu kullanır |
-| `N_KOPRU_DB_PATH` | Uygulamanın yerel SQLite yolu | Kalıcı veritabanı dosyasının açık konumu |
+| N_KOPRU_DB_PATH | backend/data/nkopru.db | Yerel SQLite dosyasının açık yolu |
+| N_KOPRU_CORS_ORIGINS | localhost ve 127.0.0.1 için 3000 | İzin verilen frontend adresleri |
+| N_KOPRU_CORS_ORIGIN_REGEX | localhost ve private LAN için 3000 | LAN sunumunda tarayıcı origin deseni |
+| N_KOPRU_AI_BATCH_SIZE | 4 | İsteğe bağlı model çıkarım grup boyutu |
+| N_KOPRU_STANCE_MODEL | mDeBERTa-XNLI model adı | Görüş ve iddia için isteğe bağlı model |
+| N_KOPRU_COACH_MODEL | Qwen 0.5B model adı | Yanıt Koçu için isteğe bağlı yerel aday |
+| N_KOPRU_COACH_FAST_PATH | 1 | Güvenli yapısal yolu öncele |
+| N_KOPRU_COACH_MAX_NEW_TOKENS | 48 | Yerel Yanıt Koçu aday uzunluğu |
 
-PowerShell örneği:
+Kopyalanabilir örnekler backend/.env.example ve frontend/.env.example
+dosyalarındadır. .env veya .env.local dosyaları kişisel yerel ayardır ve
+Git’e eklenmemelidir.
 
-```powershell
-$env:N_KOPRU_DB_PATH = "D:\NKOPRU\veri\nkopru.db"
-uvicorn app.main:app --reload --port 8000
-```
+## Backend’i LAN sunumuna açma
 
-macOS / Linux örneği:
+Tek bilgisayarda README’deki 127.0.0.1 komutu yeterlidir. Aynı özel ağdaki
+başka bir cihazdan tarayıcı açılacaksa backend şu şekilde başlatılabilir:
 
-```bash
-export N_KOPRU_AI_BATCH_SIZE=4
-uvicorn app.main:app --reload --port 8000
-```
+~~~powershell
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+~~~
 
-Backend bu değerleri çalışan sürecin ortamından okur. Yerel bir `.env`
-dosyası oluşturulursa içeriğin ilgili terminal ortamına ayrıca aktarılması
-gerekebilir; gizli bilgiler hiçbir zaman depoya eklenmemelidir.
+Varsayılan CORS yalnızca localhost, 127.0.0.1 ve özel ağdaki frontend’in
+3000 portuna izin verir. Uygulama dış sosyal platforma istek göndermez;
+CORS ayarı yalnız tarayıcının yerel API’ye erişim sınırıdır.
 
-## Frontend
+## İsteğe bağlı yapay zekâ modelleri
 
-| Ortam değişkeni | Varsayılan | Açıklama |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:8000` | Next.js arayüzünün erişeceği FastAPI adresi |
+- mDeBERTa-XNLI, belirsiz görüş ve iddia adaylarında ikinci katmandır.
+- Qwen, yalnızca Yanıt Koçu için aday metin üretir.
+- İki model de v1.5.0 yerel demosu için zorunlu değildir.
+- Model yüklenmezse yapısal yedek motor çalışır; arayüz bu durumu gizlemez.
+- Model paketleri kurulsa bile ürün harici bir LLM API anahtarına bağlanmaz.
+- Model indirme seçilirse ilk kurulum internet ve disk alanı gerektirebilir.
 
-Backend farklı bir adreste çalışıyorsa `frontend/.env.local` içine
-`NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` biçiminde tanımlanabilir.
-`.env.local` özel yerel dosyadır ve Git deposuna eklenmemelidir.
+## Veri konumu
 
-## Donanım ve model kullanımı
-
-- Belirli GPU, ekran kartı veya bilgisayar modeli gerekmez.
-- Uyumlu hızlandırma varsa kullanılabilir; CPU çalışması desteklenir.
-- mDeBERTa-XNLI görüş/iddia katmanıdır; Qwen isteğe bağlı Yanıt Koçu
-  katmanıdır. İki model birbirinin yerine geçmiş gibi raporlanmamalıdır.
-- İlk model indirme internet bağlantısı gerektirebilir. Hugging Face erişim
-  belirteci yalnızca kullanıcının kendi erişim ihtiyacı için isteğe bağlıdır;
-  kaynak depoya hiçbir belirteç eklenmez.
+SQLite dosyası backend/data altında oluşabilir. .gitignore; SQLite, WAL/SHM,
+model önbelleği, sanal ortam, node_modules ve Next.js çıktısını kaynak
+tesliminden dışarıda bırakır. Temiz GitHub tesliminde bu dosyalar bulunmamalıdır.

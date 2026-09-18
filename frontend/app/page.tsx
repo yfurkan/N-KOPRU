@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addTopicListItem, analyzeDiscussion, analyzePost, appendComment, clearReadNotifications, createBookmark, createTopicList, deleteBookmark, deleteNotification, deleteTopicList, deleteTopicListItem, getAIStatus, getAnalysisHistoryDetail, getBookmarks, getCoachStatus, getConversation, getConversations, getDemoPost, getExplorePost, getExploreTopics, getNotifications, getPostById, getProfile, getTechnicalStatus, getTopicList, getTopicLists, loadAIModel, loadCoachModel, markAllNotificationsRead, markNotificationRead, markNotificationUnread, restoreNotifications, rewriteComment, runScenarioEvaluation, runTechnicalEvaluation, sendConversationMessage, shareBridgeToConversation, updateProfile } from '../lib/api';
-import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryItem, BookmarkItem, BookmarkKind, ConversationDetail, ConversationSummary, ExploreTopic, NotificationItem, Post, ProfileResponse, RewriteResult, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicList, TopicListDetail, TopicListEntry } from '../lib/types';
+import { addTopicListItem, analyzeDiscussion, analyzePost, appendComment, clearReadNotifications, createBookmark, createTopicList, deleteBookmark, deleteNotification, deleteTopicList, deleteTopicListItem, getAIStatus, getAnalysisHistoryDetail, getBookmarks, getCoachStatus, getConversation, getConversations, getDemoPost, getExplorePost, getExploreTopics, getNotifications, getPilotOverview, getPostById, getProfile, getSystemReadiness, getTechnicalStatus, getTopicList, getTopicLists, loadAIModel, loadCoachModel, markAllNotificationsRead, markNotificationRead, markNotificationUnread, restoreNotifications, rewriteComment, runHoldoutEvaluation, runScenarioEvaluation, runTechnicalEvaluation, sendConversationMessage, shareBridgeToConversation, startPilotSession, submitPilotPhase, updateProfile } from '../lib/api';
+import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryItem, BookmarkItem, BookmarkKind, ConversationDetail, ConversationSummary, ExploreTopic, NotificationItem, PilotOverview, PilotSession, Post, ProfileResponse, RewriteResult, SystemReadiness, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicList, TopicListDetail, TopicListEntry } from '../lib/types';
 
-type NavPage = 'Ana Sayfa' | 'Keşfet' | 'Bildirimler' | 'Mesajlar' | 'Yer İmleri' | 'Listeler' | 'Profil' | 'Teknik Doğrulama';
+type NavPage = 'Ana Sayfa' | 'Sunum Modu' | 'Keşfet' | 'Bildirimler' | 'Mesajlar' | 'Yer İmleri' | 'Listeler' | 'Profil' | 'Kontrollü Senaryo' | 'Teknik Doğrulama';
 
-const navItems: NavPage[] = ['Ana Sayfa','Keşfet','Bildirimler','Mesajlar','Yer İmleri','Listeler','Profil','Teknik Doğrulama'];
+const navItems: NavPage[] = ['Ana Sayfa','Sunum Modu','Keşfet','Bildirimler','Mesajlar','Yer İmleri','Listeler','Profil','Kontrollü Senaryo','Teknik Doğrulama'];
 
 const tabs = [
   'Tartışmayı Anla', 'Ortak Zemin', 'Görüş Haritası', 'İddia Radarı',
@@ -36,6 +36,11 @@ export default function Home() {
   const [customTitle, setCustomTitle] = useState('Üniversitelerde yapay zekâ kullanımı nasıl düzenlenmeli?');
   const [customComments, setCustomComments] = useState(customExample);
   const [message, setMessage] = useState('');
+  const [presentationDemoLoading, setPresentationDemoLoading] = useState(false);
+  const [presentationDemoError, setPresentationDemoError] = useState('');
+  const [presentationDemoPrepared, setPresentationDemoPrepared] = useState(false);
+  const presentationDemoRequestRef = useRef<Promise<{post:Post; analysis:Analysis}> | null>(null);
+  const presentationDemoResultRef = useRef<{post:Post; analysis:Analysis} | null>(null);
   const [aiStatus, setAIStatus] = useState<AIStatus | null>(null);
   const [aiLoading, setAILoading] = useState(false);
   const [useAI, setUseAI] = useState(true);
@@ -59,6 +64,8 @@ export default function Home() {
   const [notificationFilter, setNotificationFilter] = useState<'Tümü'|'Okunmamış'|'Okunanlar'>('Tümü');
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [notificationOpening, setNotificationOpening] = useState(false);
+  const [notificationActionKey, setNotificationActionKey] = useState<string | null>(null);
+  const notificationActionBusyRef = useRef<string | null>(null);
   const [notificationUndo, setNotificationUndo] = useState<{ids:number[]; label:string} | null>(null);
   const notificationUndoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -69,6 +76,8 @@ export default function Home() {
   const [conversationError, setConversationError] = useState('');
   const [conversationDraft, setConversationDraft] = useState('');
   const [bridgeShareFeedback, setBridgeShareFeedback] = useState('');
+  const [bridgeShareLoading, setBridgeShareLoading] = useState(false);
+  const bridgeShareBusyRef = useRef(false);
   const [messageBridgeOpening, setMessageBridgeOpening] = useState(false);
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [bookmarkCount, setBookmarkCount] = useState(0);
@@ -100,12 +109,31 @@ export default function Home() {
   const [technicalStatus, setTechnicalStatus] = useState<TechnicalStatus | null>(null);
   const [technicalResult, setTechnicalResult] = useState<TechnicalEvaluation | null>(null);
   const [technicalScenarioResult, setTechnicalScenarioResult] = useState<TechnicalScenarioEvaluation | null>(null);
+  const [technicalHoldoutResult, setTechnicalHoldoutResult] = useState<TechnicalScenarioEvaluation | null>(null);
   const [technicalLoading, setTechnicalLoading] = useState(false);
   const [technicalRunning, setTechnicalRunning] = useState(false);
   const [technicalScenarioRunning, setTechnicalScenarioRunning] = useState(false);
+  const [technicalHoldoutRunning, setTechnicalHoldoutRunning] = useState(false);
   const [technicalError, setTechnicalError] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState(true);
+  const [announcement, setAnnouncement] = useState('N-KÖPRÜ hazır.');
 
   useEffect(() => { loadDemo(); getAIStatus().then(setAIStatus).catch(() => null); getCoachStatus().then(setCoachStatus).catch(() => null); refreshNotifications('Tümü').catch(() => null); getConversations().then(data => { setConversations(data.conversations); setSelectedConversationId(data.conversations[0]?.id ?? null); }).catch(() => null); refreshBookmarks('all').catch(() => null); refreshTopicLists(null).catch(() => null); }, []);
+  useEffect(() => {
+    const saved = window.localStorage.getItem('nkopru:privacy-mode');
+    if (saved === 'off') setPrivacyMode(false);
+  }, []);
+  useEffect(() => {
+    function closeMobileLayers(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      setMobileNavOpen(false);
+      setMobilePanelOpen(false);
+    }
+    window.addEventListener('keydown', closeMobileLayers);
+    return () => window.removeEventListener('keydown', closeMobileLayers);
+  }, []);
   useEffect(() => {
     setLiveComment('');
     setCommentFeedback('');
@@ -140,6 +168,15 @@ export default function Home() {
   const selectedBookmark = useMemo(() => visibleBookmarks.find(item => item.id === selectedBookmarkId) ?? visibleBookmarks[0] ?? null, [visibleBookmarks, selectedBookmarkId]);
   const discussionBookmark = useMemo(() => post ? bookmarks.find(item => item.kind === 'discussion' && item.post_id === post.id) ?? null : null, [bookmarks, post]);
   const bridgeBookmark = useMemo(() => post && analysis ? bookmarks.find(item => item.kind === 'bridge' && item.post_id === post.id && item.text === analysis.bridge.bridge_question) ?? null : null, [bookmarks, post, analysis]);
+
+  function togglePrivacyMode() {
+    setPrivacyMode(current => {
+      const next = !current;
+      window.localStorage.setItem('nkopru:privacy-mode', next ? 'on' : 'off');
+      setAnnouncement(next ? 'Gizlilik görünümü açıldı; katılımcı adları maskelendi.' : 'Gizlilik görünümü kapatıldı.');
+      return next;
+    });
+  }
 
   async function refreshBookmarks(kind: BookmarkKind | 'all' = bookmarkFilter) {
     setBookmarkLoading(true);
@@ -309,16 +346,18 @@ export default function Home() {
     }
   }
 
-  async function createUserTopicList(name: string, description: string) {
-    if (topicListSavingKey || !name.trim()) return;
+  async function createUserTopicList(name: string, description: string): Promise<boolean> {
+    if (topicListSavingKey || !name.trim()) return false;
     setTopicListSavingKey('create-list');
     setTopicListError('');
     try {
       const result = await createTopicList({name:name.trim(), description:description.trim()});
       const targetId = result.list?.id ?? null;
       await refreshTopicLists(targetId);
+      return true;
     } catch (e) {
       setTopicListError(e instanceof Error ? e.message : 'Liste oluşturulamadı');
+      return false;
     } finally {
       setTopicListSavingKey('');
     }
@@ -406,6 +445,19 @@ export default function Home() {
     setNotificationUnreadCount(data.unread_count);
   }
 
+  function beginNotificationAction(key:string): boolean {
+    if (notificationActionBusyRef.current) return false;
+    notificationActionBusyRef.current = key;
+    setNotificationActionKey(key);
+    return true;
+  }
+
+  function endNotificationAction(key:string) {
+    if (notificationActionBusyRef.current !== key) return;
+    notificationActionBusyRef.current = null;
+    setNotificationActionKey(null);
+  }
+
   async function refreshNotifications(mode:'Tümü'|'Okunmamış'|'Okunanlar' = notificationFilter) {
     setNotificationLoading(true);
     setNotificationError('');
@@ -434,11 +486,15 @@ export default function Home() {
   async function selectNotification(item:NotificationItem) {
     setSelectedNotification(item);
     if (item.is_read) return;
+    const actionKey = `read-${item.id}`;
+    if (!beginNotificationAction(actionKey)) return;
     try {
       await markNotificationRead(item.id);
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Bildirim güncellenemedi');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
@@ -449,6 +505,8 @@ export default function Home() {
   }
 
   async function toggleNotificationReadState(item:NotificationItem) {
+    const actionKey = `toggle-${item.id}`;
+    if (!beginNotificationAction(actionKey)) return;
     setNotificationError('');
     try {
       if (item.is_read) await markNotificationUnread(item.id);
@@ -456,10 +514,14 @@ export default function Home() {
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Bildirim durumu güncellenemedi');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
   async function removeNotification(item:NotificationItem) {
+    const actionKey = `delete-${item.id}`;
+    if (!beginNotificationAction(actionKey)) return;
     setNotificationError('');
     try {
       const result = await deleteNotification(item.id);
@@ -468,11 +530,15 @@ export default function Home() {
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Bildirim silinemedi');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
   async function clearReadNotificationItems() {
     if (notificationReadCount === 0) return;
+    const actionKey = 'clear-read';
+    if (!beginNotificationAction(actionKey)) return;
     setNotificationError('');
     try {
       const result = await clearReadNotifications();
@@ -481,11 +547,15 @@ export default function Home() {
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Okunan bildirimler temizlenemedi');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
   async function undoNotificationDelete() {
     if (!notificationUndo?.ids.length) return;
+    const actionKey = 'undo-delete';
+    if (!beginNotificationAction(actionKey)) return;
     const ids = notificationUndo.ids;
     if (notificationUndoTimer.current) clearTimeout(notificationUndoTimer.current);
     setNotificationUndo(null);
@@ -495,6 +565,8 @@ export default function Home() {
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Bildirim geri alınamadı');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
@@ -601,10 +673,13 @@ export default function Home() {
   }
 
   async function shareCurrentBridgeToMessages() {
+    if (bridgeShareBusyRef.current) return;
     if (!post || !analysis?.bridge.bridge_question) {
       setMessage('Önce bir tartışmayı analiz edip Köprü kartını oluştur.');
       return;
     }
+    bridgeShareBusyRef.current = true;
+    setBridgeShareLoading(true);
     setBridgeShareFeedback('Köprü kartı Mesajlar bölümüne aktarılıyor…');
     try {
       await shareBridgeToConversation({
@@ -625,16 +700,24 @@ export default function Home() {
       const error = e instanceof Error ? e.message : 'Köprü kartı paylaşılamadı';
       setBridgeShareFeedback(error);
       setMessage(error);
+    } finally {
+      bridgeShareBusyRef.current = false;
+      setBridgeShareLoading(false);
     }
   }
 
   async function readAllNotifications() {
+    if (notificationUnreadCount === 0) return;
+    const actionKey = 'read-all';
+    if (!beginNotificationAction(actionKey)) return;
     try {
       const result = await markAllNotificationsRead();
       applyNotificationCounts(result);
       await refreshNotifications(notificationFilter);
     } catch (e) {
       setNotificationError(e instanceof Error ? e.message : 'Bildirimler güncellenemedi');
+    } finally {
+      endNotificationAction(actionKey);
     }
   }
 
@@ -666,13 +749,20 @@ export default function Home() {
 
   async function loadDemo() {
     setMessage('');
-    const demo = await getDemoPost();
-    setPost(demo);
-    setAnalysis(null);
-    setCustomOpen(false);
-    setNavPage('Ana Sayfa');
-    setRewrite(null);
-    setShowAllComments(false);
+    try {
+      const demo = await getDemoPost();
+      setPost(demo);
+      setAnalysis(null);
+      setCustomOpen(false);
+      setNavPage('Ana Sayfa');
+      setRewrite(null);
+      setShowAllComments(false);
+      setAnnouncement('Örnek tartışma yüklendi.');
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : 'Örnek tartışma yüklenemedi';
+      setMessage(`Backend bağlantısı kurulamadı: ${detail}`);
+      setAnnouncement(detail);
+    }
   }
 
   async function runAnalysis() {
@@ -781,6 +871,80 @@ export default function Home() {
     setExplorePreviewLoading(false);
   }, []);
 
+  async function preparePresentationDemo(): Promise<{post:Post; analysis:Analysis}> {
+    if (presentationDemoResultRef.current) {
+      setPresentationDemoPrepared(true);
+      return presentationDemoResultRef.current;
+    }
+    if (presentationDemoRequestRef.current) return presentationDemoRequestRef.current;
+
+    setPresentationDemoLoading(true);
+    setPresentationDemoError('');
+    const request = (async () => {
+      const demo = await getDemoPost();
+      // A presentation must remain responsive. The real model is used only
+      // when it is already loaded; otherwise the truthful structural fallback
+      // avoids silently downloading/loading a large model on a button click.
+      const presentationUseAI = useAI && aiStatus?.loaded === true;
+      const result = await analyzePost(demo.id, presentationUseAI);
+      refreshNotifications('Tümü').catch(() => null);
+      const prepared = {post: demo, analysis: result};
+      presentationDemoResultRef.current = prepared;
+      setPresentationDemoPrepared(true);
+      return prepared;
+    })();
+    presentationDemoRequestRef.current = request;
+
+    try {
+      return await request;
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : 'Jüri demosu hazırlanamadı';
+      setPresentationDemoError(detail);
+      setPresentationDemoPrepared(false);
+      setAnnouncement(detail);
+      throw e;
+    } finally {
+      presentationDemoRequestRef.current = null;
+      setPresentationDemoLoading(false);
+    }
+  }
+
+  function openNavPage(page: NavPage) {
+    setNavPage(page);
+    setCustomOpen(false);
+    setMobileNavOpen(false);
+    setMobilePanelOpen(false);
+    setAnnouncement(`${page} bölümü açıldı.`);
+    if (page === 'Bildirimler') refreshNotifications(notificationFilter).catch(() => null);
+    if (page === 'Mesajlar') refreshConversations().catch(() => null);
+    if (page === 'Yer İmleri') refreshBookmarks(bookmarkFilter).catch(() => null);
+    if (page === 'Listeler') {
+      refreshTopicLists(selectedTopicListId).catch(() => null);
+      ensureTopicListSourceAnalysis().catch(() => null);
+    }
+    if (page === 'Profil') refreshProfile(true).catch(() => null);
+    if (page === 'Teknik Doğrulama') refreshTechnicalStatus().catch(() => null);
+    if (page === 'Sunum Modu') preparePresentationDemo().catch(() => null);
+  }
+
+  async function openPresentationDemo(tabIndex = 0) {
+    try {
+      const {post: demo, analysis: result} = await preparePresentationDemo();
+      setPost(demo);
+      setAnalysis(result);
+      setActive(Math.max(0, Math.min(7, tabIndex)));
+      setRewrite(null);
+      setShowAllComments(false);
+      setNavPage('Ana Sayfa');
+      setMobilePanelOpen(true);
+      setAnnouncement(`Jüri demosu hazırlandı. ${tabs[Math.max(0, Math.min(7, tabIndex))]} modülü açıldı.`);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : 'Jüri demosu hazırlanamadı';
+      setMessage(detail);
+      setAnnouncement(detail);
+    }
+  }
+
 
   async function refreshProfile(selectHistory = true) {
     setProfileLoading(true);
@@ -811,6 +975,7 @@ export default function Home() {
       setTechnicalStatus(result);
       setTechnicalResult(result.latest_result);
       setTechnicalScenarioResult(result.latest_scenario_result);
+      setTechnicalHoldoutResult(result.latest_holdout_result ?? null);
     } catch (e) {
       setTechnicalError(e instanceof Error ? e.message : 'Teknik doğrulama yüklenemedi');
     } finally {
@@ -819,7 +984,7 @@ export default function Home() {
   }
 
   async function startTechnicalEvaluation() {
-    if (technicalRunning || technicalScenarioRunning) return;
+    if (technicalRunning || technicalScenarioRunning || technicalHoldoutRunning) return;
     setTechnicalRunning(true);
     setTechnicalError('');
     try {
@@ -838,7 +1003,7 @@ export default function Home() {
   }
 
   async function startScenarioEvaluation() {
-    if (technicalRunning || technicalScenarioRunning) return;
+    if (technicalRunning || technicalScenarioRunning || technicalHoldoutRunning) return;
     setTechnicalScenarioRunning(true);
     setTechnicalError('');
     try {
@@ -856,6 +1021,25 @@ export default function Home() {
     }
   }
 
+  async function startHoldoutEvaluation() {
+    if (technicalRunning || technicalScenarioRunning || technicalHoldoutRunning) return;
+    setTechnicalHoldoutRunning(true);
+    setTechnicalError('');
+    try {
+      const result = await runHoldoutEvaluation(useAI);
+      setTechnicalHoldoutResult(result);
+      setTechnicalStatus(current => current ? {
+        ...current,
+        latest_holdout_result: result,
+        model_status: result.model_status,
+      } : null);
+    } catch (e) {
+      setTechnicalError(e instanceof Error ? e.message : 'Ayrılmış yeni iç kontrol tamamlanamadı');
+    } finally {
+      setTechnicalHoldoutRunning(false);
+    }
+  }
+
   async function loadHistoryDetail(historyId:number) {
     setSelectedHistoryId(historyId);
     setHistoryLoading(true);
@@ -870,15 +1054,17 @@ export default function Home() {
     }
   }
 
-  async function saveProfile(payload:{display_name:string;handle:string;bio:string}) {
-    if (profileSaving) return;
+  async function saveProfile(payload:{display_name:string;handle:string;bio:string}): Promise<boolean> {
+    if (profileSaving) return false;
     setProfileSaving(true);
     setProfileError('');
     try {
       const data = await updateProfile(payload);
       setProfileData(data);
+      return true;
     } catch (e) {
       setProfileError(e instanceof Error ? e.message : 'Profil güncellenemedi');
+      return false;
     } finally {
       setProfileSaving(false);
     }
@@ -929,11 +1115,18 @@ export default function Home() {
   }
 
   async function runRewrite() {
-    if (!draft.trim()) return;
+    if (rewriteLoading || !draft.trim()) return;
     setRewriteLoading(true); setMessage('');
     try {
-      const result = await rewriteComment(draft, post?.text ?? '', useAI);
+      const firstOpenQuestion = analysis?.unanswered_questions.find(item => item.answer_status !== 'Cevaplandı')?.text;
+      const coachContext = [
+        post?.text,
+        analysis?.bridge.main_divergence,
+        firstOpenQuestion ? `Açık soru: ${firstOpenQuestion}` : '',
+      ].filter(Boolean).join(' | ');
+      const result = await rewriteComment(draft, coachContext, useAI);
       setRewrite(result);
+      setAnnouncement('Yanıt Koçu önerisi hazırlandı.');
       if (useAI) getCoachStatus().then(setCoachStatus).catch(() => null);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Yanıt Koçu çalıştırılamadı');
@@ -942,17 +1135,21 @@ export default function Home() {
 
   return (
     <main className='appShell'>
-      <aside className='sidebar'>
+      <a className='skipLink' href='#main-content'>Ana içeriğe geç</a>
+      <div className='srOnly' role='status' aria-live='polite' aria-atomic='true'>{announcement}</div>
+      <aside id='primary-navigation' className={`sidebar ${mobileNavOpen ? 'sidebarOpen' : ''}`} aria-label='Uygulama menüsü'>
+        <button className='mobileDrawerClose' onClick={() => setMobileNavOpen(false)} aria-label='Menüyü kapat'>×</button>
         <div className='brand'>
           <div className='logo'>🌉</div>
           <div><strong>N-KÖPRÜ</strong><span>Farklı düşün. Daha iyi konuş.</span></div>
         </div>
-        <nav>
+        <nav aria-label='Ana menü'>
           {navItems.map(x => (
             <button
               key={x}
               className={navPage === x ? 'navActive' : ''}
-              onClick={() => { setNavPage(x); setCustomOpen(false); if (x === 'Bildirimler') refreshNotifications(notificationFilter).catch(() => null); if (x === 'Mesajlar') refreshConversations().catch(() => null); if (x === 'Yer İmleri') refreshBookmarks(bookmarkFilter).catch(() => null); if (x === 'Listeler') { refreshTopicLists(selectedTopicListId).catch(() => null); ensureTopicListSourceAnalysis().catch(() => null); } if (x === 'Profil') refreshProfile(true).catch(() => null); if (x === 'Teknik Doğrulama') refreshTechnicalStatus().catch(() => null); }}
+              aria-current={navPage === x ? 'page' : undefined}
+              onClick={() => openNavPage(x)}
             >
               <span>{x}</span>{x === 'Bildirimler' && notificationUnreadCount > 0 && <em className='navCount'>{notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}</em>}{x === 'Mesajlar' && conversationUnreadCount > 0 && <em className='navCount'>{conversationUnreadCount > 99 ? '99+' : conversationUnreadCount}</em>}{x === 'Yer İmleri' && bookmarkCount > 0 && <em className='navCount'>{bookmarkCount > 99 ? '99+' : bookmarkCount}</em>}{x === 'Listeler' && topicListCount > 0 && <em className='navCount'>{topicListCount > 99 ? '99+' : topicListCount}</em>}
             </button>
@@ -964,9 +1161,14 @@ export default function Home() {
         </div>
       </aside>
 
-      <section className='feed'>
+      {(mobileNavOpen || mobilePanelOpen) && <button className='mobileBackdrop' onClick={() => { setMobileNavOpen(false); setMobilePanelOpen(false); }} aria-label='Açık paneli kapat' />}
+
+      <section id='main-content' className='feed' tabIndex={-1} aria-label='Ana içerik'>
         <header className='topbar'>
-          <div className='topBrand'><span className='eyebrow'>NSosyal demo</span><h1>N-KÖPRÜ</h1></div>
+          <div className='topbarIdentity'>
+            <button className='mobileMenuButton' onClick={() => setMobileNavOpen(true)} aria-controls='primary-navigation' aria-expanded={mobileNavOpen} aria-label='Ana menüyü aç'>☰</button>
+            <div className='topBrand'><span className='eyebrow'>NSosyal demo</span><h1>N-KÖPRÜ</h1></div>
+          </div>
           {navPage === 'Ana Sayfa' ? (
             <div className='topActions'>
               <button className={`aiButton ${aiStatus?.loaded ? 'aiReady' : ''}`} onClick={prepareAI} disabled={aiLoading} title={aiStatus?.message ?? 'AI model durumu'}>
@@ -976,12 +1178,18 @@ export default function Home() {
                 <input type='checkbox' checked={useAI} onChange={e => setUseAI(e.target.checked)} />
                 <span>Gerçek AI</span>
               </label>
+              <button className={`privacyButton ${privacyMode ? 'privacyOn' : ''}`} onClick={togglePrivacyMode} aria-pressed={privacyMode} title='Ekrandaki katılımcı adlarını maskele'>
+                {privacyMode ? '◉ Gizlilik Açık' : '○ Gizlilik Kapalı'}
+              </button>
               <button className='ghost' onClick={loadDemo}>Örneğe Dön</button>
               <button className='primary noMargin' onClick={() => setCustomOpen(v => !v)}>＋ Yeni Tartışma</button>
             </div>
           ) : (
-            <button className='ghost' onClick={() => setNavPage('Ana Sayfa')}>← Ana Sayfaya Dön</button>
+            <button className='ghost' onClick={() => openNavPage('Ana Sayfa')}>← Ana Sayfaya Dön</button>
           )}
+          <button className='mobilePanelToggle' onClick={() => setMobilePanelOpen(true)} aria-controls='analysis-panel' aria-expanded={mobilePanelOpen}>
+            {navPage === 'Ana Sayfa' ? 'Analiz' : 'Ayrıntı'}
+          </button>
         </header>
 
         {navPage === 'Ana Sayfa' ? (
@@ -1005,13 +1213,13 @@ export default function Home() {
                       </div>
                     )}
 
-                    {message && <div className='errorBox'>{message}</div>}
+                    {message && <div className='errorBox' role='alert'>{message}</div>}
 
                     {!post ? <div className='card'>Gönderi yükleniyor…</div> : (
                       <article className='postCard'>
                         <div className='postMeta'>
-                          <div className='avatar'>{post.author.slice(0,2).toUpperCase()}</div>
-                          <div><b>{post.author}</b> <span>{post.handle} · {post.created_at}</span></div>
+                          <div className='avatar'>{visibleAuthor(post.author, post.id, privacyMode).slice(0,2).toUpperCase()}</div>
+                          <div><b>{visibleAuthor(post.author, post.id, privacyMode)}</b> <span>{privacyMode ? '@katilimci' : post.handle} · {post.created_at}</span></div>
                         </div>
                         <h2>{post.text}</h2>
                         <div className='engagement'><span>💬 {post.comments.length}</span><span>↻ 83</span><span>♡ 342</span></div>
@@ -1030,6 +1238,7 @@ export default function Home() {
                             <span className='liveBadge'>CANLI</span>
                           </div>
                           <textarea
+                            aria-label='Tartışmaya eklenecek yeni yorum'
                             value={liveComment}
                             onChange={e => setLiveComment(e.target.value)}
                             placeholder='Tartışmaya katkını yaz…'
@@ -1042,15 +1251,15 @@ export default function Home() {
                               {commentSubmitting ? 'Yorum ekleniyor ve analiz güncelleniyor…' : '＋ Yorumu Ekle ve Analizi Güncelle'}
                             </button>
                           </div>
-                          {commentFeedback && <div className={`liveCommentFeedback ${commentFeedback.includes('kaydedildi') ? 'success' : 'failure'}`}>{commentFeedback}</div>}
-                          {latestLiveComment && <div className='latestLiveComment'><div><b>Son eklenen yorum · #{latestLiveComment.id}</b><span>{latestLiveComment.author}</span></div><p>{latestLiveComment.text}</p></div>}
+                          {commentFeedback && <div role='status' className={`liveCommentFeedback ${commentFeedback.includes('kaydedildi') ? 'success' : 'failure'}`}>{commentFeedback}</div>}
+                          {latestLiveComment && <div className='latestLiveComment'><div><b>Son eklenen yorum · #{latestLiveComment.id}</b><span>{visibleAuthor(latestLiveComment.author, latestLiveComment.id, privacyMode)}</span></div><p>{latestLiveComment.text}</p></div>}
                         </div>
 
                         <div className='comments'>
                           {displayedComments.map(c => (
                             <div className='comment' key={c.id}>
-                              <div className='avatar small'>{c.author.split(' ').map(s => s[0]).join('').slice(0,2)}</div>
-                              <div><b>{c.author}</b> <span>· {c.created_at}</span><p>{c.text}</p><small>♡ {c.likes}</small></div>
+                              <div className='avatar small'>{visibleAuthor(c.author, c.id, privacyMode).split(' ').map(s => s[0]).join('').slice(0,2)}</div>
+                              <div><b>{visibleAuthor(c.author, c.id, privacyMode)}</b> <span>· {c.created_at}</span><p>{c.text}</p><small>♡ {c.likes}</small></div>
                             </div>
                           ))}
                           {post.comments.length > 12 && (
@@ -1063,6 +1272,16 @@ export default function Home() {
                     )}
 
           </>
+        ) : navPage === 'Sunum Modu' ? (
+          <PresentationWorkspace
+            onOpenDemo={openPresentationDemo}
+            onPrepareDemo={preparePresentationDemo}
+            demoReady={presentationDemoPrepared}
+            demoLoading={presentationDemoLoading}
+            demoError={presentationDemoError}
+            onOpenTechnical={() => openNavPage('Teknik Doğrulama')}
+            onOpenPilot={() => openNavPage('Kontrollü Senaryo')}
+          />
         ) : navPage === 'Keşfet' ? (
           <ExploreWorkspace
             onOpenTopic={openExploreTopic}
@@ -1080,6 +1299,7 @@ export default function Home() {
             error={notificationError}
             filter={notificationFilter}
             selectedId={selectedNotification?.id ?? null}
+            actionKey={notificationActionKey}
             undo={notificationUndo}
             onFilter={setNotificationMode}
             onRefresh={() => refreshNotifications(notificationFilter)}
@@ -1139,27 +1359,33 @@ export default function Home() {
             onOpenHistory={openHistorySnapshot}
             onSave={saveProfile}
           />
+        ) : navPage === 'Kontrollü Senaryo' ? (
+          <PilotWorkspace />
         ) : navPage === 'Teknik Doğrulama' ? (
           <TechnicalWorkspace
             status={technicalStatus}
             result={technicalResult}
             scenarioResult={technicalScenarioResult}
+            holdoutResult={technicalHoldoutResult}
             currentPost={post}
             currentAnalysis={analysis}
             loading={technicalLoading}
             running={technicalRunning}
             scenarioRunning={technicalScenarioRunning}
+            holdoutRunning={technicalHoldoutRunning}
             error={technicalError}
             onRefresh={refreshTechnicalStatus}
             onRun={startTechnicalEvaluation}
             onRunScenarios={startScenarioEvaluation}
+            onRunHoldout={startHoldoutEvaluation}
           />
         ) : (
           <NavWorkspace page={navPage} onOpenHome={() => setNavPage('Ana Sayfa')} />
         )}
       </section>
 
-      <section className='analysisPanel'>
+      <section id='analysis-panel' className={`analysisPanel ${mobilePanelOpen ? 'mobilePanelOpen' : ''}`} aria-label={navPage === 'Ana Sayfa' ? 'Tartışma analiz paneli' : `${navPage} ayrıntıları`}>
+        <button className='mobileDrawerClose mobilePanelClose' onClick={() => setMobilePanelOpen(false)} aria-label='Ayrıntı panelini kapat'>×</button>
         {navPage === 'Ana Sayfa' ? (
           <>
                     <div className='panelHeader'>
@@ -1185,11 +1411,33 @@ export default function Home() {
                           </span>
                           {totalElapsedMs > 0 && <span className='timingChip'>⏱ {formatDuration(totalElapsedMs)}</span>}
                         </div>
-                        <div className='tabStrip'>
-                          {tabs.map((tab,i) => <button key={tab} className={active === i ? 'activeTab' : ''} onClick={() => setActive(i)} title={tab}>{i+1}<small>{tab}</small></button>)}
+                        <div className='tabStrip' role='tablist' aria-label='Analiz modülleri'>
+                          {tabs.map((tab,i) => <button
+                            key={tab}
+                            id={`analysis-tab-${i}`}
+                            role='tab'
+                            tabIndex={active === i ? 0 : -1}
+                            aria-selected={active === i}
+                            aria-controls='analysis-module'
+                            className={active === i ? 'activeTab' : ''}
+                            onClick={() => { setActive(i); setAnnouncement(`${tab} modülü açıldı.`); }}
+                            onKeyDown={event => {
+                              let next = i;
+                              if (event.key === 'ArrowRight') next = (i + 1) % tabs.length;
+                              else if (event.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+                              else if (event.key === 'Home') next = 0;
+                              else if (event.key === 'End') next = tabs.length - 1;
+                              else return;
+                              event.preventDefault();
+                              setActive(next);
+                              setAnnouncement(`${tabs[next]} modülü açıldı.`);
+                              requestAnimationFrame(() => document.getElementById(`analysis-tab-${next}`)?.focus());
+                            }}
+                            title={tab}
+                          >{i+1}<small>{tab}</small></button>)}
                         </div>
 
-                        <div className='moduleCard'>
+                        <div id='analysis-module' className='moduleCard' role='tabpanel' aria-labelledby={`analysis-tab-${active}`}>
                           <div className='moduleTitle'><span>{active+1}</span><h3>{tabs[active]}</h3></div>
 
                           {active === 0 && <>
@@ -1251,7 +1499,7 @@ export default function Home() {
                                     </div>}
                                     {v.representative_comments?.length > 0 && <div className='viewpointRepresentatives'>
                                       <b>Temsilci yorumlar</b>
-                                      {v.representative_comments.map(item => <div className='viewpointRepresentative' key={item.comment_id}><div><strong>#{item.comment_id} · {item.author}</strong><span>{item.confidence > 0 ? `%${Math.round(item.confidence*100)} model güveni` : 'Yapısal sinyal'}</span></div><p>{item.text}</p></div>)}
+                                      {v.representative_comments.map(item => <div className='viewpointRepresentative' key={item.comment_id}><div><strong>#{item.comment_id} · {visibleAuthor(item.author, item.comment_id, privacyMode)}</strong><span>{item.confidence > 0 ? `%${Math.round(item.confidence*100)} model güveni` : 'Yapısal sinyal'}</span></div><p>{item.text}</p></div>)}
                                     </div>}
                                     {guardrailComments.length > 0 && <div className='viewpointGuardrailComments'>
                                       <b>Anlam tutarlılığıyla doğrulanan yorumlar</b>
@@ -1317,10 +1565,10 @@ export default function Home() {
                                 <p>Mesajın ana fikrini korur; kişiselleştirme, ton, soru ve kanıt ihtiyacını tartışma bağlamına göre değerlendirir.</p>
                               </div>
                               <div className='coachStatusArea'>
-                                <span className={coachStatus?.loaded ? 'coachReadyChip' : 'coachWaitChip'}>
-                                  {coachStatus?.loaded ? '● Üretken AI hazır' : '◇ Üretken AI bekliyor'}
+                                <span className={coachStatus?.loaded ? 'coachReadyChip' : coachStatus?.mode === 'coach-fallback' ? 'coachFallbackChip' : 'coachWaitChip'}>
+                                  {coachStatus?.loaded ? '● Üretken AI hazır' : coachStatus?.mode === 'coach-fallback' ? '● Güvenli Koç hazır' : '◇ Üretken AI bekliyor'}
                                 </span>
-                                {!coachStatus?.loaded && useAI && (
+                                {!coachStatus?.loaded && coachStatus?.installed && useAI && (
                                   <button className='ghost compact' onClick={prepareCoach} disabled={coachLoading}>
                                     {coachLoading ? 'Model hazırlanıyor…' : 'AI Koçunu Hazırla'}
                                   </button>
@@ -1328,13 +1576,14 @@ export default function Home() {
                               </div>
                             </div>
                             <label className='fieldLabel'>Yorumun</label>
-                            <textarea value={draft} onChange={e => { setDraft(e.target.value); setRewrite(null); }} />
-                            <button className='primary' onClick={runRewrite} disabled={rewriteLoading}>
-                              {rewriteLoading ? 'AI mesajı analiz ediyor…' : '✨ Mesajı analiz et ve yeniden yaz'}
+                            <textarea value={draft} maxLength={2000} aria-describedby='coach-input-hint' onChange={e => { setDraft(e.target.value); setRewrite(null); }} />
+                            <small id='coach-input-hint' className='coachInputHint'>En fazla 2.000 karakter · {draft.length}/2000</small>
+                            <button className='primary' onClick={runRewrite} disabled={rewriteLoading || !draft.trim()} aria-busy={rewriteLoading}>
+                              {rewriteLoading ? 'Yanıt hazırlanıyor…' : '✨ Mesajı analiz et ve yeniden yaz'}
                             </button>
                             {rewrite && <div className='coachBox'>
                               <div className='coachResultTop'>
-                                <span className='eyebrow'>AI ÖNERİSİ</span>
+                                <span className='eyebrow'>YANIT ÖNERİSİ</span>
                                 <span className='coachEngineChip'>{rewrite.engine === 'qwen-generative' ? 'Denetimli Üretken AI' : rewrite.engine === 'hybrid-safe' ? 'Hibrit Güvenli Katman' : rewrite.engine === 'preserve-safe' ? 'Değişiklik Gerekmedi' : 'Bağlamsal Güvenli Motor'} • {formatDuration(rewrite.elapsed_ms)}</span>
                               </div>
                               <p>{rewrite.suggestion}</p>
@@ -1346,16 +1595,19 @@ export default function Home() {
 
                           {active === 6 && <div className='stack'>{analysis.changes_since_last_visit.map(x => <div className='timeline' key={x}><span>✓</span><p>{x}</p></div>)}</div>}
 
-                          {active === 7 && <div className='bridgeBox'><div className='bridgeEngineSummary'><div><span className='eyebrow'>KANITA DAYALI KÖPRÜ SENTEZİ</span><b>{analysis.bridge.engine ?? 'Köprü sentezi'}</b></div><div className='bridgeEngineChips'>{typeof analysis.bridge.confidence === 'number' && <span>%{Math.round(analysis.bridge.confidence*100)} güven</span>}{analysis.bridge.evidence_comment_ids?.length ? <span>{analysis.bridge.evidence_comment_ids.length} kanıt yorumu</span> : null}{bridgeElapsedMs > 0 && <span>{formatDuration(bridgeElapsedMs)}</span>}</div></div><Bridge label='Ortak kabul' text={analysis.bridge.common_acceptance} /><Bridge label='Asıl ayrışma' text={analysis.bridge.main_divergence} />{analysis.bridge.contrast_viewpoint_labels?.length ? <div className='bridgeContrastRow'><b>Karşılaştırılan yaklaşımlar</b><div>{analysis.bridge.contrast_viewpoint_labels.map(label => <span key={label}>{label}</span>)}</div></div> : null}<Bridge label='Eksik bilgi / doğrulama ihtiyacı' text={analysis.bridge.missing_information} />{analysis.bridge.evidence_comment_ids?.length ? <div className='bridgeEvidenceRow'><b>Dayanak yorumlar</b><span>#{analysis.bridge.evidence_comment_ids.join(', #')}</span></div> : null}<Bridge label='🌉 Tartışmayı ilerletecek Köprü Sorusu' text={analysis.bridge.bridge_question} strong /><div className='bridgeActionRow'><button className='primary' onClick={() => void shareCurrentBridgeToMessages()}>Köprüyü Mesajlarda Paylaş</button><button className={`ghost bookmarkToggle ${bridgeBookmark ? 'bookmarkSaved' : ''}`} onClick={() => void toggleBridgeBookmark()} disabled={bookmarkSavingKey === `bridge-${post?.id}`}>{bookmarkSavingKey === `bridge-${post?.id}` ? 'Kaydediliyor…' : bridgeBookmark ? '★ Köprü Kaydedildi' : '☆ Köprüyü Kaydet'}</button></div>{bridgeShareFeedback && <small className='bridgeShareFeedback'>{bridgeShareFeedback}</small>}</div>}
+                          {active === 7 && <div className='bridgeBox'><div className='bridgeEngineSummary'><div><span className='eyebrow'>KANITA DAYALI KÖPRÜ SENTEZİ</span><b>{analysis.bridge.engine ?? 'Köprü sentezi'}</b></div><div className='bridgeEngineChips'>{typeof analysis.bridge.confidence === 'number' && <span>%{Math.round(analysis.bridge.confidence*100)} güven</span>}{analysis.bridge.evidence_comment_ids?.length ? <span>{analysis.bridge.evidence_comment_ids.length} kanıt yorumu</span> : null}{bridgeElapsedMs > 0 && <span>{formatDuration(bridgeElapsedMs)}</span>}</div></div><Bridge label='Ortak kabul' text={analysis.bridge.common_acceptance} /><Bridge label='Asıl ayrışma' text={analysis.bridge.main_divergence} />{analysis.bridge.contrast_viewpoint_labels?.length ? <div className='bridgeContrastRow'><b>Karşılaştırılan yaklaşımlar</b><div>{analysis.bridge.contrast_viewpoint_labels.map(label => <span key={label}>{label}</span>)}</div></div> : null}<Bridge label='Eksik bilgi / doğrulama ihtiyacı' text={analysis.bridge.missing_information} />{analysis.bridge.evidence_comment_ids?.length ? <div className='bridgeEvidenceRow'><b>Dayanak yorumlar</b><span>#{analysis.bridge.evidence_comment_ids.join(', #')}</span></div> : null}<Bridge label='🌉 Tartışmayı ilerletecek Köprü Sorusu' text={analysis.bridge.bridge_question} strong /><div className='bridgeActionRow'><button className='primary' onClick={() => void shareCurrentBridgeToMessages()} disabled={bridgeShareLoading} aria-busy={bridgeShareLoading}>{bridgeShareLoading ? 'Paylaşılıyor…' : 'Köprüyü Mesajlarda Paylaş'}</button><button className={`ghost bookmarkToggle ${bridgeBookmark ? 'bookmarkSaved' : ''}`} onClick={() => void toggleBridgeBookmark()} disabled={bookmarkSavingKey === `bridge-${post?.id}`}>{bookmarkSavingKey === `bridge-${post?.id}` ? 'Kaydediliyor…' : bridgeBookmark ? '★ Köprü Kaydedildi' : '☆ Köprüyü Kaydet'}</button></div>{bridgeShareFeedback && <small role='status' className='bridgeShareFeedback'>{bridgeShareFeedback}</small>}</div>}
                         </div>
                       </>
                     )}
 
           </>
+        ) : navPage === 'Sunum Modu' ? (
+          <PresentationPanel />
         ) : navPage === 'Keşfet' ? (
           <ExplorePreviewPanel
             topic={explorePreviewTopic}
             post={explorePreviewPost}
+            privacyMode={privacyMode}
             loading={explorePreviewLoading}
             error={explorePreviewError}
             onOpenTopic={openExploreTopic}
@@ -1364,6 +1616,7 @@ export default function Home() {
           <NotificationPanel
             notification={selectedNotification}
             opening={notificationOpening}
+            actionKey={notificationActionKey}
             onOpen={openNotificationTarget}
             onToggleRead={toggleNotificationReadState}
             onDelete={removeNotification}
@@ -1411,8 +1664,10 @@ export default function Home() {
             opening={historyOpening}
             onOpen={openHistorySnapshot}
           />
+        ) : navPage === 'Kontrollü Senaryo' ? (
+          <PilotPanel />
         ) : navPage === 'Teknik Doğrulama' ? (
-          <TechnicalPanel result={technicalResult} scenarioResult={technicalScenarioResult} loading={technicalLoading} running={technicalRunning || technicalScenarioRunning} />
+          <TechnicalPanel result={technicalResult} scenarioResult={technicalScenarioResult} holdoutResult={technicalHoldoutResult} loading={technicalLoading} running={technicalRunning || technicalScenarioRunning || technicalHoldoutRunning} />
         ) : (
           <NavContext page={navPage} />
         )}
@@ -1422,23 +1677,348 @@ export default function Home() {
 }
 
 
-async function shareBridge(title: string, question: string) {
-  const text = `N-KÖPRÜ • ${title}\n\nTartışmayı ilerletecek Köprü Sorusu:\n${question}`;
-  try {
-    if (navigator.share) {
-      await navigator.share({ title: 'N-KÖPRÜ', text });
-      return;
-    }
-    await navigator.clipboard.writeText(text);
-    window.alert('Köprü kartı panoya kopyalandı.');
-  } catch {
-    // Kullanıcı paylaşım penceresini kapatırsa sessizce devam et.
-  }
+function visibleAuthor(author: string, id: number, privacyMode: boolean) {
+  if (!privacyMode) return author;
+  if (author === 'Yeni Tartışma') return 'Anonim tartışma sahibi';
+  return `Katılımcı ${Math.abs(id)}`;
 }
 
 function formatDuration(ms: number) {
   if (ms < 1000) return `${ms} ms`;
   return `${(ms / 1000).toFixed(1)} sn`;
+}
+
+function PresentationWorkspace({
+  onOpenDemo,
+  onPrepareDemo,
+  demoReady,
+  demoLoading,
+  demoError,
+  onOpenTechnical,
+  onOpenPilot,
+}:{
+  onOpenDemo:(tabIndex?:number)=>Promise<void>;
+  onPrepareDemo:()=>Promise<{post:Post; analysis:Analysis}>;
+  demoReady:boolean;
+  demoLoading:boolean;
+  demoError:string;
+  onOpenTechnical:()=>void;
+  onOpenPilot:()=>void;
+}) {
+  const [readiness, setReadiness] = useState<SystemReadiness | null>(null);
+  const [pilot, setPilot] = useState<PilotOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeStep, setActiveStep] = useState(1);
+  const [secondsLeft, setSecondsLeft] = useState(270);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const story = [
+    {title:'1 · Problem', duration:'35 sn', text:'Uzun sosyal tartışmalarda görüşler, iddialar ve cevapsız sorular görünmezleşiyor.'},
+    {title:'2 · Çalışan çözüm', duration:'80 sn', text:'Sekiz analiz adımı aynı yorum akışını anlaşılır ve izlenebilir bir tartışma haritasına dönüştürüyor.'},
+    {title:'3 · Teknik kanıt', duration:'55 sn', text:'Hibrit motor, şeffaf model kullanımı, kalıcı SQLite kayıtları ve çalıştırılabilir doğrulama ekranı.'},
+    {title:'4 · Kullanım sınırı', duration:'45 sn', text:'Gerçek kullanıcı verisi toplamadan, sabit örnek ve otomatik kontrollerle tekrarlanabilir bir demo akışı gösteriliyor.'},
+    {title:'5 · Kapanış', duration:'35 sn', text:'N-KÖPRÜ taraf seçmez; farklı tarafların hangi ölçüt ve kanıtla ilerleyebileceğini görünür kılar.'},
+  ];
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [nextReadiness, nextPilot] = await Promise.all([getSystemReadiness(), getPilotOverview()]);
+      setReadiness(nextReadiness);
+      setPilot(nextPilot);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sunum hazırlık bilgisi alınamadı');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!timerRunning || secondsLeft <= 0) {
+      if (timerRunning && secondsLeft <= 0) setTimerRunning(false);
+      return;
+    }
+    const timer = window.setInterval(() => setSecondsLeft(value => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [timerRunning, secondsLeft]);
+
+  async function openDemoTab(tabIndex:number) {
+    if (actionLoading) return;
+    setActionLoading(true);
+    try {
+      await onOpenDemo(tabIndex);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const seconds = (secondsLeft % 60).toString().padStart(2, '0');
+
+  return (
+    <div className='presentationWorkspace'>
+      <div className='presentationHero'>
+        <div>
+          <span className='eyebrow'>N-KÖPRÜ · FİNALİST SUNUM KONSOLU</span>
+          <h2>Jüri demosunu tek akışta yönet</h2>
+          <p>Bu ekran uygulamanın kendisi değil; jüriye hangi sırayla ne göstereceğini yöneten sunum kumandasıdır.</p>
+        </div>
+        <div className={`readinessSeal ${readiness?.presentation_ready ? 'ready' : ''}`}>
+          <strong>{loading ? '…' : readiness?.presentation_ready ? 'HAZIR' : 'KONTROL'}</strong>
+          <span>{readiness ? `v${readiness.version}` : 'v1.5.0'}</span>
+        </div>
+      </div>
+
+      <div className='presentationHowTo'>
+        <div className='presentationHowToIcon'>▶</div>
+        <div>
+            <b>Jüri akışı</b>
+            <p>Önce problemi anlat. Sonra aşağıdaki canlı demo düğmelerinden birine bas; ilk basış demoyu hazırlar, sonraki basışlar aynı analizi ilgili kanıt sekmesine götürür.</p>
+            <div className='presentationHowToSteps'><span>1 · Problemi anlat</span><span>2 · Canlı özeti aç</span><span>3 · Kanıtı göster</span><span>4 · Sonuca bağla</span></div>
+        </div>
+      </div>
+
+      {error && <div className='errorBox' role='alert'>{error}</div>}
+
+      <div className='presentationControlBar'>
+        <div className={`presentationTimer ${secondsLeft <= 30 ? 'timerUrgent' : ''}`} aria-live='polite'>
+          <span>Sunum sayacı</span><strong>{minutes}:{seconds}</strong>
+        </div>
+        <button className='primary noMargin' onClick={() => setTimerRunning(value => secondsLeft > 0 ? !value : false)} disabled={secondsLeft <= 0}>{timerRunning ? 'Sayacı Durdur' : '4:30 Sayacı Başlat'}</button>
+        <button className='ghost' onClick={() => { setSecondsLeft(270); setTimerRunning(false); }}>Sıfırla</button>
+        <button className='ghost' onClick={() => void refresh()} disabled={loading || demoLoading}>{loading ? 'Kontrol ediliyor…' : 'Hazırlığı Yenile'}</button>
+      </div>
+
+      <div className='juryScoreStrip'>
+        <div><strong>98/100</strong><span>Teknik rapor sonucu</span></div>
+        <div><strong>8</strong><span>Çalışan analiz modülü</span></div>
+        <div><strong>{readiness ? `${readiness.required_ready_count}/${readiness.required_check_count}` : '—'}</strong><span>Zorunlu hazırlık kontrolü</span></div>
+        <div><strong>{pilot?.practice_session_count ?? 0}</strong><span>Kontrollü demo denemesi</span></div>
+      </div>
+
+      <div className='presentationStoryTabs' role='tablist' aria-label='Jüri anlatı adımları'>
+        {story.map((item,index) => <button
+          key={item.title}
+          id={`story-tab-${index}`}
+          role='tab'
+          tabIndex={activeStep === index ? 0 : -1}
+          aria-selected={activeStep === index}
+          aria-controls='presentation-story-panel'
+          className={activeStep === index ? 'storyActive' : ''}
+          onClick={() => setActiveStep(index)}
+          onKeyDown={event => {
+            let next = index;
+            if (event.key === 'ArrowRight') next = (index + 1) % story.length;
+            else if (event.key === 'ArrowLeft') next = (index - 1 + story.length) % story.length;
+            else if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = story.length - 1;
+            else return;
+            event.preventDefault();
+            setActiveStep(next);
+            requestAnimationFrame(() => document.getElementById(`story-tab-${next}`)?.focus());
+          }}
+        ><b>{item.title}</b><span>{item.duration}</span></button>)}
+      </div>
+
+      <section id='presentation-story-panel' className='presentationStage' role='tabpanel' aria-labelledby={`story-tab-${activeStep}`}>
+        <span className='eyebrow'>{story[activeStep].duration} HEDEF SÜRE</span>
+        <h3>{story[activeStep].title}</h3>
+        <p>{story[activeStep].text}</p>
+        {activeStep === 0 && <div className='juryTalkingPoint'>“Bir tartışmayı daha kısa göstermek yetmez; insanların nerede ayrıştığını, hangi iddianın kanıt istediğini ve hangi sorunun hâlâ açık olduğunu göstermeliyiz.”</div>}
+        {activeStep === 1 && <div className='presentationDemoActions'>
+          <div className={`presentationActionStatus ${demoError ? 'error' : demoReady ? 'ready' : 'pending'}`} role='status' aria-live='polite'>
+            <b>{demoLoading ? 'Canlı demo hazırlanıyor…' : demoReady ? 'Canlı demo hazır.' : demoError ? 'Canlı demo hazırlanamadı.' : 'Canlı demo ilk tıklamada hazırlanır.'}</b>
+            <span>{demoLoading ? 'Hazırlık sürerken bir canlı demo düğmesine basabilirsiniz; aynı istek tamamlanınca hedef ekran otomatik açılır.' : demoReady ? 'Aşağıdaki düğmeler aynı tartışmanın farklı kanıt ekranlarını açar; yeni analiz başlatmaz.' : demoError || 'Canlı Özeti Aç düğmesiyle başlayın. Model hazır değilse hızlı yapısal motor kullanılır.'}</span>
+          </div>
+          {!demoReady && !demoLoading && <button className='primary noMargin' onClick={() => void onPrepareDemo().catch(() => null)}>↻ Demo verisini hazırla</button>}
+          <div className='presentationActions'>
+            <button className='primary noMargin' onClick={() => void openDemoTab(0)} disabled={actionLoading}>{actionLoading ? 'Demo açılıyor…' : '▶ Canlı Özeti Aç'}</button>
+            <button className='ghost' onClick={() => void openDemoTab(2)} disabled={actionLoading}>Görüş Haritasını Aç</button>
+            <button className='ghost' onClick={() => void openDemoTab(7)} disabled={actionLoading}>Köprü Sorusunu Aç</button>
+          </div>
+        </div>}
+        {activeStep === 2 && <div className='presentationActions'><button className='primary noMargin' onClick={onOpenTechnical}>Teknik Doğrulamayı Aç</button><span className='presentationTruthNote'>Proje içi doğrulama ile bağımsız benchmark birbirine karıştırılmaz.</span></div>}
+        {activeStep === 3 && <div className='presentationActions'><button className='primary noMargin' onClick={onOpenPilot}>Kontrollü Senaryoyu Aç</button><span className='presentationTruthNote'>{pilot?.conclusion ?? 'Bu teslimde gerçek kullanıcı verisi toplanmaz; yalnızca sabit demo senaryosu gösterilir.'}</span></div>}
+        {activeStep === 4 && <div className='juryTalkingPoint'>“Amacımız kullanıcıya ne düşüneceğini söylemek değil; farklı görüşlerin daha güvenli, kanıtlı ve anlaşılır biçimde konuşabilmesini sağlamak.”</div>}
+      </section>
+
+      <div className='readinessGrid'>
+        {(readiness?.checks ?? []).map(item => <div className={`readinessItem readiness-${item.status}`} key={item.key}><span>{item.status === 'ready' ? '✓' : item.required ? '!' : '◇'}</span><div><b>{item.label}</b><p>{item.detail}</p></div><small>{item.required ? 'Zorunlu' : 'İsteğe bağlı'}</small></div>)}
+        {!readiness && loading && <div className='presentationLoading'>Sunum hazırlık kontrolleri çalışıyor…</div>}
+      </div>
+    </div>
+  );
+}
+
+function PresentationPanel() {
+  return (
+    <>
+      <div className='panelHeader'><div><span className='eyebrow'>JÜRİ ODAĞI</span><h2>Göster, kanıtla, sınırı açıkla</h2></div><span className='status good'>Finalist</span></div>
+      <div className='presentationPanelStack'>
+        <div className='contextCard presentationContextCard'>
+          <div className='contextIcon'>1</div>
+          <h3>Tek cümlelik değer önerisi</h3>
+          <p>N-KÖPRÜ, kalabalık sosyal tartışmaları taraf tutmadan görüş, kanıt ihtiyacı ve ortak karar ölçütlerine dönüştürür.</p>
+        </div>
+        <div className='moduleCard presentationGuideCard'>
+          <h3>Bu ekranın görevi</h3>
+          <p>Sol paneldeki 5 adım konuşma sırasıdır. Kartı seç, kısa anlatımı yap, ardından yalnızca o adıma ait kanıt ekranını aç.</p>
+        </div>
+        <div className='moduleCard juryChecklist'>
+          <h3>Canlı demoda mutlaka göster</h3>
+          <span>✓ Gerçek yorumlardan görüş haritası</span>
+          <span>✓ Kaynaksız iddiaya doğrulama ihtiyacı</span>
+          <span>✓ Cevapsız sorunun karar etkisi</span>
+          <span>✓ 28 kelimeyi aşmayan Köprü sorusu</span>
+          <span>✓ Model ve ölçüm sınırlarının şeffaflığı</span>
+        </div>
+        <div className='moduleCard juryRiskCard'>
+          <b>Sunum güvenlik ağı</b>
+          <p>Transformer yüklenmese bile yapısal motor çalışır. “AI hazır değil” bir çökme değil, şeffaf yedek çalışma durumudur.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PilotWorkspace() {
+  const [overview, setOverview] = useState<PilotOverview | null>(null);
+  const [session, setSession] = useState<PilotSession | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [clarity, setClarity] = useState(0);
+  const [confidence, setConfidence] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const phaseStartedAt = useRef(0);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try { setOverview(await getPilotOverview()); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Kontrollü demo bilgisi alınamadı'); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (session?.current_phase) phaseStartedAt.current = window.performance.now();
+  }, [session?.current_phase?.phase_index]);
+
+  async function begin() {
+    if (submitting) return;
+    setSubmitting(true); setError(''); setFeedback('');
+    try {
+      const created = await startPilotSession(true, true);
+      setSession(created);
+      setSelectedAnswer(null); setClarity(0); setConfidence(0);
+      phaseStartedAt.current = window.performance.now();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Demo denemesi başlatılamadı'); }
+    finally { setSubmitting(false); }
+  }
+
+  async function completePhase() {
+    const phase = session?.current_phase;
+    if (!session || !phase || selectedAnswer == null || clarity === 0 || confidence === 0 || submitting) {
+      setError('Yanıtı, açıklık puanını ve karar güvenini tamamla.');
+      return;
+    }
+    setSubmitting(true); setError(''); setFeedback('');
+    try {
+      const duration = Math.max(1000, Math.round(window.performance.now() - phaseStartedAt.current));
+      const response = await submitPilotPhase(session.session_id, {
+        phase_index: phase.phase_index,
+        selected_answer: selectedAnswer,
+        duration_ms: duration,
+        clarity_rating: clarity,
+        confidence_rating: confidence,
+      });
+      setSession(response.session);
+      setSelectedAnswer(null); setClarity(0); setConfidence(0);
+      setFeedback(response.session.completed ? 'İki sabit senaryo görevi tamamlandı. Bu deneme gerçek kullanıcı metriği değildir.' : 'İlk demo görevi tamamlandı. Şimdi diğer görünüme geçiliyor.');
+      if (response.session.completed) await refresh();
+      else phaseStartedAt.current = window.performance.now();
+    } catch (e) { setError(e instanceof Error ? e.message : 'Demo görevi kaydedilemedi'); }
+    finally { setSubmitting(false); }
+  }
+
+  const phase = session?.current_phase ?? null;
+  return (
+    <div className='pilotWorkspace'>
+      <div className='workspaceHero pilotHero'>
+        <div><span className='eyebrow'>KONTROLLÜ DEMO · SABİT SENARYO</span><h2>N-KÖPRÜ senaryo denemesi</h2><p>Bu alan gerçek kullanıcı verisi toplamaz. Jüri, iki sabit tartışmada ham yorum akışı ile N-KÖPRÜ analiz görünümünü aynı deneme içinde inceleyebilir.</p></div>
+        <span className='pilotProtocol'>Protokol {overview?.protocol_version ?? 'v1.5.0-controlled-demo'}</span>
+      </div>
+      {error && <div className='errorBox' role='alert'>{error}</div>}
+      {feedback && <div className='liveCommentFeedback success' role='status'>{feedback}</div>}
+
+      <div className='pilotMetrics'>
+        <div><strong>{overview?.practice_session_count ?? 0}</strong><span>Yerel deneme</span><small>Kalıcı kullanıcı metriği değildir</small></div>
+        <div><strong>2</strong><span>Sabit konu</span><small>Gece ulaşımı + park saatleri</small></div>
+        <div><strong>2</strong><span>Karşılaştırılan akış</span><small>Ham + N-KÖPRÜ görünümü</small></div>
+        <div><strong>Yok</strong><span>Gerçek sonuç</span><small>Bu teslimde bilerek üretilmez</small></div>
+      </div>
+
+      {!session ? (
+        <section className='pilotStartCard'>
+          <div><span className='eyebrow'>YEREL DENEME</span><h3>İki sabit görevi başlat</h3><p>Deneme, uygulamanın anlatım akışını gösterir. Dış platforma bağlanmaz; gerçek katılımcı hesabı, kullanıcı profili veya etki sonucu oluşturmaz.</p></div>
+          <div className='pilotPracticeBanner'>Deneme modu sabittir: kayıtlar yalnızca bu yerel akışı çalıştırmak için tutulur ve gerçek kullanıcı metriklerine katılmaz.</div>
+          <button className='primary noMargin' disabled={submitting} onClick={() => void begin()}>{submitting ? 'Demo hazırlanıyor…' : 'Deneme Akışını Başlat'}</button>
+        </section>
+      ) : session.completed ? (
+        <section className='pilotCompleteCard'>
+          <span>✓</span><div><h3>Kontrollü deneme tamamlandı</h3><p>{session.participant_code} kodlu yerel demo akışının iki görevi de tamamlandı. Bu kayıt gerçek kullanıcı sonucu değildir ve dışa aktarılmaz.</p><button className='primary noMargin' onClick={() => { setSession(null); setFeedback(''); }}>Denemeyi Yeniden Başlat</button></div>
+        </section>
+      ) : phase ? (
+        <section className='pilotTaskCard'>
+          <div className='pilotTaskHeader'><div><span className='eyebrow'>GÖREV {phase.phase_index + 1}/2 · YEREL DEMO</span><h3>{phase.title}</h3><p>{phase.instructions}</p></div><span className={phase.variant === 'nkopru' ? 'pilotVariantNkopru' : 'pilotVariantRaw'}>{phase.variant === 'nkopru' ? 'N-KÖPRÜ' : 'HAM YORUMLAR'}</span></div>
+          <div className='pilotPracticeBanner'>Sabit demo senaryosu: bu görev gerçek kullanıcı metriğine katılmaz.</div>
+          {phase.variant === 'raw' ? (
+            <div className='pilotRawComments'>{phase.comments.map((text,index) => <div key={`${phase.scenario_key}-${index}`}><b>Örnek {index + 1}</b><p>{text}</p></div>)}</div>
+          ) : phase.analysis ? (
+            <div className='pilotAnalysisView'>
+              <div className='pilotAnalysisSummary'><span>Tartışmayı Anla</span><p>{phase.analysis.short_summary}</p></div>
+              <div className='pilotViewpoints'>{phase.analysis.viewpoints.map(item => <div key={item.name}><b>{item.name}</b><strong>%{item.percentage}</strong><small>{item.comment_count} yorum</small></div>)}</div>
+              <div className='pilotBridge'><span>Asıl ayrışma</span><p>{phase.analysis.main_divergence}</p><span>Köprü sorusu</span><p>{phase.analysis.bridge_question}</p></div>
+            </div>
+          ) : null}
+          <fieldset className='pilotQuestion'>
+            <legend>{phase.question}</legend>
+            {phase.choices.map((choice,index) => <label key={choice} className={selectedAnswer === index ? 'pilotChoiceSelected' : ''}><input type='radio' name='pilot-answer' checked={selectedAnswer === index} onChange={() => setSelectedAnswer(index)} /><span>{choice}</span></label>)}
+          </fieldset>
+          <div className='pilotRatings'>
+            <label><span>Bu demo görünümü ne kadar açıktı?</span><select value={clarity} onChange={event => setClarity(Number(event.target.value))}><option value={0}>Puan seç</option>{[1,2,3,4,5].map(value => <option value={value} key={value}>{value} / 5</option>)}</select></label>
+            <label><span>Seçiminden ne kadar eminsin?</span><select value={confidence} onChange={event => setConfidence(Number(event.target.value))}><option value={0}>Puan seç</option>{[1,2,3,4,5].map(value => <option value={value} key={value}>{value} / 5</option>)}</select></label>
+          </div>
+          <button className='primary noMargin' onClick={() => void completePhase()} disabled={submitting || selectedAnswer == null || clarity === 0 || confidence === 0}>{submitting ? 'Kaydediliyor…' : phase.phase_index === 0 ? 'Kaydet ve İkinci Göreve Geç' : 'Denemeyi Tamamla'}</button>
+        </section>
+      ) : null}
+
+      <section className='pilotConclusion'>
+        <div><b>Gerçek sonuç üretilmiyor</b><p>{overview?.conclusion ?? 'Demo açıklaması yükleniyor…'}</p><small>{overview?.integrity_note}</small></div>
+        <div className='pilotExportActions'><button className='ghost' onClick={() => void refresh()} disabled={loading}>Deneme durumunu yenile</button></div>
+      </section>
+    </div>
+  );
+}
+
+function PilotPanel() {
+  return (
+    <>
+      <div className='panelHeader'><div><span className='eyebrow'>TESLİM SINIRI</span><h2>Demo, gerçek kullanıcı sonucu değildir</h2></div><span className='status'>Yerel</span></div>
+      <div className='pilotPanelStack'>
+        <div className='moduleCard pilotMethodCard'><h3>Bu ekran neyi gösterir?</h3><p>İki sabit tartışmada ham yorumları ve N-KÖPRÜ’nün özet, görüş haritası ve Köprü çıktısını aynı akış içinde karşılaştırmalı olarak gösterir.</p></div>
+        <div className='moduleCard pilotMethodCard'><h3>Bilerek toplanmayanlar</h3><span>Gerçek kullanıcı hesabı</span><span>İsim, e-posta veya profil bilgisi</span><span>Canlı platform verisi</span><span>Kullanıcı etkisi veya başarı sonucu</span></div>
+        <div className='moduleCard pilotPrivacyCard'><h3>Yerel çalışma sınırı</h3><p>Sabit örnekler ve deneme yanıtları yalnızca uygulamanın akışını göstermek için yerel SQLite içinde tutulur. Dış servise gönderilmez ve gerçek sonuç olarak sunulmaz.</p></div>
+        <div className='moduleCard pilotMethodCard'><h3>Jüriye doğru ifade</h3><p>“Bu teslim, ölçüm sonucu iddia etmek yerine yöntemin tekrarlanabilir ve denetlenebilir demo akışını gösterir.”</p></div>
+      </div>
+    </>
+  );
 }
 
 
@@ -1603,12 +2183,14 @@ function ExploreWorkspace({
 function ExplorePreviewPanel({
   topic,
   post,
+  privacyMode,
   loading,
   error,
   onOpenTopic,
 }:{
   topic:ExploreTopic | null;
   post:Post | null;
+  privacyMode:boolean;
   loading:boolean;
   error:string;
   onOpenTopic:(topicId:number, analyzeNow?:boolean)=>Promise<void>;
@@ -1658,8 +2240,8 @@ function ExplorePreviewPanel({
               <div className='previewSectionTitle'>Örnek yorumlar</div>
               {post.comments.slice(0,4).map(comment => (
                 <div className='previewComment' key={comment.id}>
-                  <div className='avatar small'>{comment.author.split(' ').map(s => s[0]).join('').slice(0,2)}</div>
-                  <div><b>{comment.author}</b><p>{comment.text}</p></div>
+                  <div className='avatar small'>{visibleAuthor(comment.author, comment.id, privacyMode).split(' ').map(s => s[0]).join('').slice(0,2)}</div>
+                  <div><b>{visibleAuthor(comment.author, comment.id, privacyMode)}</b><p>{comment.text}</p></div>
                 </div>
               ))}
               {post.comments.length > 4 && <small>+ {post.comments.length - 4} yorum daha</small>}
@@ -1694,6 +2276,7 @@ function NotificationWorkspace({
   error,
   filter,
   selectedId,
+  actionKey,
   undo,
   onFilter,
   onRefresh,
@@ -1712,6 +2295,7 @@ function NotificationWorkspace({
   error:string;
   filter:'Tümü'|'Okunmamış'|'Okunanlar';
   selectedId:number | null;
+  actionKey:string | null;
   undo:{ids:number[]; label:string} | null;
   onFilter:(mode:'Tümü'|'Okunmamış'|'Okunanlar')=>Promise<void>;
   onRefresh:()=>Promise<void>;
@@ -1744,15 +2328,15 @@ function NotificationWorkspace({
       <div className='notificationToolbar'>
         <div className='notificationFilters'>
           {(['Tümü','Okunmamış','Okunanlar'] as const).map(mode => (
-            <button key={mode} className={filter === mode ? 'notificationFilterActive' : ''} onClick={() => void onFilter(mode)}>
+            <button key={mode} className={filter === mode ? 'notificationFilterActive' : ''} onClick={() => void onFilter(mode)} disabled={actionKey !== null}>
               {mode}{mode === 'Okunmamış' && unreadCount > 0 ? ` (${unreadCount})` : mode === 'Okunanlar' && readCount > 0 ? ` (${readCount})` : ''}
             </button>
           ))}
         </div>
         <div className='notificationActions'>
-          <button className='ghost compact' onClick={() => void onRefresh()} disabled={loading}>↻ Yenile</button>
-          <button className='ghost compact' onClick={() => void onReadAll()} disabled={unreadCount === 0}>Tümünü okundu yap</button>
-          <button className='ghost compact dangerGhost' onClick={() => void onClearRead()} disabled={readCount === 0}>Okunanları temizle</button>
+          <button className='ghost compact' onClick={() => void onRefresh()} disabled={loading || actionKey !== null}>↻ Yenile</button>
+          <button className='ghost compact' onClick={() => void onReadAll()} disabled={unreadCount === 0 || actionKey !== null}>{actionKey === 'read-all' ? 'Okunuyor…' : 'Tümünü okundu yap'}</button>
+          <button className='ghost compact dangerGhost' onClick={() => void onClearRead()} disabled={readCount === 0 || actionKey !== null}>{actionKey === 'clear-read' ? 'Temizleniyor…' : 'Okunanları temizle'}</button>
         </div>
       </div>
 
@@ -1798,12 +2382,13 @@ function NotificationWorkspace({
                   className='notificationMenuButton'
                   aria-label='Bildirim seçenekleri'
                   aria-expanded={menuId === item.id}
+                  disabled={actionKey !== null}
                   onClick={e => { e.stopPropagation(); setMenuId(current => current === item.id ? null : item.id); }}
                 >⋯</button>
                 {menuId === item.id && (
                   <div className='notificationMenu' onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setMenuId(null); void onToggleRead(item); }}>{item.is_read ? 'Okunmadı yap' : 'Okundu yap'}</button>
-                    <button className='notificationDeleteAction' onClick={() => { setMenuId(null); void onDelete(item); }}>Bildirimi sil</button>
+                    <button onClick={() => { setMenuId(null); void onToggleRead(item); }} disabled={actionKey !== null}>{item.is_read ? 'Okunmadı yap' : 'Okundu yap'}</button>
+                    <button className='notificationDeleteAction' onClick={() => { setMenuId(null); void onDelete(item); }} disabled={actionKey !== null}>Bildirimi sil</button>
                   </div>
                 )}
               </div>
@@ -1815,7 +2400,7 @@ function NotificationWorkspace({
       {undo && (
         <div className='notificationUndoToast' role='status'>
           <span>{undo.label}</span>
-          <button onClick={() => void onUndo()}>Geri Al</button>
+          <button onClick={() => void onUndo()} disabled={actionKey !== null}>{actionKey === 'undo-delete' ? 'Geri alınıyor…' : 'Geri Al'}</button>
         </div>
       )}
 
@@ -1830,12 +2415,14 @@ function NotificationWorkspace({
 function NotificationPanel({
   notification,
   opening,
+  actionKey,
   onOpen,
   onToggleRead,
   onDelete,
 }:{
   notification:NotificationItem | null;
   opening:boolean;
+  actionKey:string | null;
   onOpen:(item:NotificationItem)=>Promise<void>;
   onToggleRead:(item:NotificationItem)=>Promise<void>;
   onDelete:(item:NotificationItem)=>Promise<void>;
@@ -1877,12 +2464,12 @@ function NotificationPanel({
 
           <div className='notificationDetailActions'>
             {notification.post_id != null && notification.tab_index != null && (
-              <button className='primary notificationOpenButton' onClick={() => void onOpen(notification)} disabled={opening}>
+              <button className='primary notificationOpenButton' onClick={() => void onOpen(notification)} disabled={opening || actionKey !== null}>
                 {opening ? 'İlgili analiz açılıyor…' : `→ ${destinationNames[notification.tab_index] ?? 'N-KÖPRÜ'} adımına git`}
               </button>
             )}
-            <button className='ghost' onClick={() => void onToggleRead(notification)}>{notification.is_read ? 'Okunmadı yap' : 'Okundu yap'}</button>
-            <button className='ghost dangerGhost' onClick={() => void onDelete(notification)}>Bildirimi sil</button>
+            <button className='ghost' onClick={() => void onToggleRead(notification)} disabled={actionKey !== null}>{actionKey === `toggle-${notification.id}` ? 'Güncelleniyor…' : notification.is_read ? 'Okunmadı yap' : 'Okundu yap'}</button>
+            <button className='ghost dangerGhost' onClick={() => void onDelete(notification)} disabled={actionKey !== null}>{actionKey === `delete-${notification.id}` ? 'Siliniyor…' : 'Bildirimi sil'}</button>
           </div>
           <small className='notificationSessionNote'>Bildirimler SQLite üzerinde kalıcı saklanır; backend yeniden başlasa da okunma ve silme durumları korunur.</small>
         </div>
@@ -2247,7 +2834,7 @@ function ListWorkspace({
   savingKey:string;
   onSelect:(item:TopicList)=>Promise<void>;
   onRefresh:()=>Promise<void>;
-  onCreate:(name:string,description:string)=>Promise<void>;
+  onCreate:(name:string,description:string)=>Promise<boolean>;
   onDelete:(listId:number)=>Promise<void>;
 }) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -2256,7 +2843,8 @@ function ListWorkspace({
 
   async function createNow() {
     if (!name.trim()) return;
-    await onCreate(name, description);
+    const created = await onCreate(name, description);
+    if (!created) return;
     setName('');
     setDescription('');
     setCreateOpen(false);
@@ -2498,33 +3086,39 @@ function TechnicalWorkspace({
   status,
   result,
   scenarioResult,
+  holdoutResult,
   currentPost,
   currentAnalysis,
   loading,
   running,
   scenarioRunning,
+  holdoutRunning,
   error,
   onRefresh,
   onRun,
   onRunScenarios,
+  onRunHoldout,
 }:{
   status:TechnicalStatus | null;
   result:TechnicalEvaluation | null;
   scenarioResult:TechnicalScenarioEvaluation | null;
+  holdoutResult:TechnicalScenarioEvaluation | null;
   currentPost:Post | null;
   currentAnalysis:Analysis | null;
   loading:boolean;
   running:boolean;
   scenarioRunning:boolean;
+  holdoutRunning:boolean;
   error:string;
   onRefresh:()=>Promise<void>;
   onRun:()=>Promise<void>;
   onRunScenarios:()=>Promise<void>;
+  onRunHoldout:()=>Promise<void>;
 }) {
   const model = result?.model_status ?? status?.model_status ?? null;
   const hardware = result?.hardware ?? status?.hardware ?? null;
   const liveAnalysis = currentPost && currentAnalysis?.post_id === currentPost.id ? currentAnalysis : null;
-  const busy = running || scenarioRunning;
+  const busy = running || scenarioRunning || holdoutRunning;
   return (
     <div className='navWorkspace technicalWorkspace'>
       <div className='workspaceHero technicalHero'>
@@ -2575,8 +3169,46 @@ function TechnicalWorkspace({
               <span>{scenario.topic}</span><strong>{technicalPercent(scenario.accuracy)}</strong><small>{scenario.correct_count}/{scenario.sample_count}</small>
             </div>)}
           </div>
+          {typeof scenarioResult.semantic_guardrail_count === 'number' && <div className='technicalSemanticSummary'>
+            <strong>Bağlama duyarlı anlam koruması</strong>
+            <span><b>{scenarioResult.semantic_guardrail_count}</b> yorumda erişim/süreklilik, kanıt ihtiyacı veya konuya bağlı kısıtlama açık anlamıyla çözüldü.</span>
+          </div>}
           <small>{scenarioResult.engine_note}</small>
         </> : <small>Sonuçlar önceden yazılmaz; 80 cümle ancak düğmeye bastığında mevcut görüş motoruyla sınıflandırılır.</small>}
+      </div>
+
+      <div className='technicalScenarioCard technicalHoldoutCard'>
+        <div className='technicalSectionHeading'>
+          <div><span className='eyebrow'>AYRILMIŞ YENİ PROJE İÇİ KONTROL</span><h3>Önceki örneklerden ayrı görüş testi</h3></div>
+          <span className='technicalHoldoutCount'>{status?.holdout_dataset?.scenario_count ?? 5} yeni konu · {status?.holdout_dataset?.sample_count ?? 80} yeni örnek</span>
+        </div>
+        <p>Mahalle parkı, okul kantini, geri dönüşüm, halk kütüphanesi ve dijital oyun; önceki 80 cümleyle metin veya konu çakışmaz.</p>
+        <div className='technicalScenarioTags'>
+          {(status?.holdout_dataset?.scenarios ?? []).map(scenario => <span key={scenario.key}>{scenario.topic}</span>)}
+        </div>
+        <div className='technicalHoldoutEvidence'>
+          <span><b>{status?.holdout_dataset?.calibration_sample_overlap_count ?? 0}</b> ortak cümle</span>
+          <span><b>{status?.holdout_dataset?.calibration_topic_overlap_count ?? 0}</b> ortak konu</span>
+          {status?.holdout_dataset?.frozen_sha256 && <span title={status.holdout_dataset.frozen_sha256}>SHA-256: {status.holdout_dataset.frozen_sha256.slice(0, 12)}…</span>}
+        </div>
+        <button className='primary compact noMargin technicalScenarioButton technicalHoldoutButton' onClick={() => void onRunHoldout()} disabled={loading || busy}>
+          {holdoutRunning ? '80 yeni ifade gerçekten değerlendiriliyor…' : '▶ Ayrılmış Yeni Kontrolü Başlat'}
+        </button>
+        {holdoutResult ? <>
+          <div className='technicalScenarioScoreGrid'>
+            <div><strong>{technicalPercent(holdoutResult.accuracy)}</strong><span>Ayrı set doğruluğu</span><small>{holdoutResult.correct_count}/{holdoutResult.sample_count} doğru</small></div>
+            <div><strong>{technicalPercent(holdoutResult.macro_f1)}</strong><span>Ayrı set Macro-F1</span><small>{holdoutResult.dataset.label_count} dengeli sınıf</small></div>
+            <div><strong>{holdoutResult.error_count}</strong><span>Gerçek sınıflandırma hatası</span><small>Her hata sağ panelde açıkça gösterilir</small></div>
+            <div><strong>{holdoutResult.transformer_inference_count}</strong><span>Gerçek görüş çıkarımı</span><small>{holdoutResult.structural_decision_count} yapısal karar</small></div>
+          </div>
+          <div className='technicalTopicSummary'>
+            {holdoutResult.scenarios.map(scenario => <div key={scenario.key}>
+              <span>{scenario.topic}</span><strong>{technicalPercent(scenario.accuracy)}</strong><small>{scenario.correct_count}/{scenario.sample_count}</small>
+            </div>)}
+          </div>
+          <small className='technicalHoldoutScope'>{holdoutResult.dataset.calibration_note}</small>
+          <small>{holdoutResult.dataset.limitation}</small>
+        </> : <small>Sonuç önceden yazılmaz; yeni set proje içi ayrı kontroldür ve bağımsız akademik benchmark değildir.</small>}
       </div>
 
       {currentPost && <div className='technicalLiveDiscussionCard'>
@@ -2705,9 +3337,10 @@ function TechnicalWorkspace({
   );
 }
 
-function TechnicalPanel({result, scenarioResult, loading, running}:{
+function TechnicalPanel({result, scenarioResult, holdoutResult, loading, running}:{
   result:TechnicalEvaluation | null;
   scenarioResult:TechnicalScenarioEvaluation | null;
+  holdoutResult:TechnicalScenarioEvaluation | null;
   loading:boolean;
   running:boolean;
 }) {
@@ -2717,15 +3350,18 @@ function TechnicalPanel({result, scenarioResult, loading, running}:{
   const scenarioLabels = scenarioResult?.class_metrics.map(item => item.label) ?? [];
   const additionalScenarioLabels = scenarioResult ? Array.from(new Set(scenarioResult.confusion_matrix.flatMap(item => Object.keys(item.predicted_counts)).filter(label => !scenarioLabels.includes(label)))) : [];
   const scenarioPredictedLabels = [...scenarioLabels, ...additionalScenarioLabels];
+  const holdoutLabels = holdoutResult?.class_metrics.map(item => item.label) ?? [];
+  const additionalHoldoutLabels = holdoutResult ? Array.from(new Set(holdoutResult.confusion_matrix.flatMap(item => Object.keys(item.predicted_counts)).filter(label => !holdoutLabels.includes(label)))) : [];
+  const holdoutPredictedLabels = [...holdoutLabels, ...additionalHoldoutLabels];
 
   return (
     <>
       <div className='panelHeader'>
         <div><span className='eyebrow'>ŞEFFAF YEREL DEĞERLENDİRME</span><h2>Ölçüm Ayrıntıları</h2></div>
-        <span className={result || scenarioResult ? 'status good' : 'status'}>{running ? '● Ölçülüyor' : result || scenarioResult ? '● Ölçüldü' : 'Bekliyor'}</span>
+        <span className={result || scenarioResult || holdoutResult ? 'status good' : 'status'}>{running ? '● Ölçülüyor' : result || scenarioResult || holdoutResult ? '● Ölçüldü' : 'Bekliyor'}</span>
       </div>
 
-      {!result && !scenarioResult ? (
+      {!result && !scenarioResult && !holdoutResult ? (
         <div className='emptyState'>
           <div className='bigIcon'>◫</div>
           <h3>{loading ? 'Ölçüm geçmişi okunuyor' : running ? 'Gerçek analiz çalıştırılıyor' : 'Henüz ölçüm sonucu yok'}</h3>
@@ -2733,6 +3369,72 @@ function TechnicalPanel({result, scenarioResult, loading, running}:{
         </div>
       ) : (
         <div className='technicalPanelStack'>
+          {holdoutResult && <>
+            <div className='moduleCard technicalScenarioDetailCard technicalHoldoutDetailCard'>
+              <div className='technicalSectionHeading'>
+                <div><span className='eyebrow'>BEŞ YENİ KONU · AYRILMIŞ PROJE İÇİ SET</span><h3>Ayrı yeni iç kontrol sonucu</h3></div>
+                <span className='technicalHoldoutCount'>{holdoutResult.correct_count}/{holdoutResult.sample_count} doğru</span>
+              </div>
+              <div className='technicalScenarioScoreGrid'>
+                <div><strong>{technicalPercent(holdoutResult.accuracy)}</strong><span>Genel doğruluk</span></div>
+                <div><strong>{technicalPercent(holdoutResult.macro_f1)}</strong><span>Macro-F1</span></div>
+                {holdoutResult.difficulty_metrics.map(metric => <div key={metric.key}><strong>{technicalPercent(metric.accuracy)}</strong><span>{metric.label}</span><small>{metric.correct_count}/{metric.sample_count}</small></div>)}
+              </div>
+              <div className='technicalHoldoutEvidence'>
+                <span><b>{holdoutResult.dataset.calibration_sample_overlap_count ?? 0}</b> ortak cümle</span>
+                <span><b>{holdoutResult.dataset.calibration_topic_overlap_count ?? 0}</b> ortak konu</span>
+                {holdoutResult.dataset.frozen_sha256 && <span title={holdoutResult.dataset.frozen_sha256}>SHA-256: {holdoutResult.dataset.frozen_sha256.slice(0, 12)}…</span>}
+              </div>
+              <div className='technicalLiveMetrics'>
+                <span><b>{holdoutResult.structural_decision_count}</b> yapısal karar</span>
+                <span><b>{holdoutResult.transformer_inference_count}</b> gerçek Transformer çıkarımı</span>
+                <span><b>{formatDuration(holdoutResult.elapsed_ms)}</b> toplam</span>
+              </div>
+              <small>{holdoutResult.dataset.limitation}</small>
+              {holdoutResult.dataset.calibration_note && <small className='technicalHoldoutScope'>{holdoutResult.dataset.calibration_note}</small>}
+            </div>
+
+            <div className='moduleCard technicalScenarioTopicsCard technicalHoldoutTopicsCard'>
+              <div className='technicalSectionHeading'><div><span className='eyebrow'>ÖNCEKİ BAŞLIKLARDAN AYRI BEŞ KONU</span><h3>Yeni tartışma konularında sonuç</h3></div></div>
+              <div className='technicalTopicCards'>
+                {holdoutResult.scenarios.map(scenario => <details className='technicalTopicCard' key={scenario.key}>
+                  <summary><div><b>{scenario.topic}</b><small>{scenario.title}</small></div><strong>{technicalPercent(scenario.accuracy)}</strong></summary>
+                  <p>{scenario.correct_count}/{scenario.sample_count} doğru • Macro-F1 {technicalPercent(scenario.macro_f1)} • {scenario.error_count} gerçek hata</p>
+                  <div className='technicalTopicClasses'>{scenario.class_metrics.map(item => <span key={item.label}>{technicalLabelShort(item.label)}: {technicalPercent(item.f1)}</span>)}</div>
+                  <small>{scenario.transformer_inference_count} model çıkarımı • {scenario.structural_decision_count} yapısal karar • {formatDuration(scenario.elapsed_ms)}</small>
+                </details>)}
+              </div>
+            </div>
+
+            <div className='moduleCard technicalMatrixCard technicalHoldoutMatrixCard'>
+              <div className='technicalSectionHeading'><div><span className='eyebrow'>80 YENİ ÖRNEK · BEŞ AYRI BAŞLIK</span><h3>Ayrı kontrol karışıklık matrisi</h3></div></div>
+              <div className='technicalMatrixScroll'>
+                <table className='technicalMatrix'>
+                  <thead><tr><th>Beklenen ↓ / Tahmin →</th>{holdoutPredictedLabels.map(label => <th key={label} title={label}>{technicalLabelShort(label)}</th>)}</tr></thead>
+                  <tbody>{holdoutResult.confusion_matrix.map(row => <tr key={row.expected_label}><th>{technicalLabelShort(row.expected_label)}</th>{holdoutPredictedLabels.map(label => <td className={label === row.expected_label ? 'diagonal' : ''} key={label}>{row.predicted_counts[label] ?? 0}</td>)}</tr>)}</tbody>
+                </table>
+              </div>
+              <small>Önceki 80 cümle ve dört konu bu matrise dahil edilmez; sonuçlar yeni gerçek tahminlerden hesaplanır.</small>
+            </div>
+
+            <div className='moduleCard technicalClassCard technicalHoldoutClassCard'>
+              <div className='technicalSectionHeading'><div><span className='eyebrow'>AYRI DENGELİ PROJE İÇİ SET</span><h3>Yeni örneklerde sınıf başarısı</h3></div></div>
+              <div className='technicalClassList'>{holdoutResult.class_metrics.map(item => <div className='technicalClassRow' key={item.label}><div><b>{item.label}</b><small>{item.support} etiketli örnek</small></div><div><span>P {technicalPercent(item.precision)}</span><span>R {technicalPercent(item.recall)}</span><strong>F1 {technicalPercent(item.f1)}</strong></div></div>)}</div>
+            </div>
+
+            <details className='moduleCard technicalPredictionCard technicalHoldoutErrors' open={holdoutResult.error_count > 0}>
+              <summary><span>Ayrı kontroldeki gerçek sınıflandırma hataları</span><small>{holdoutResult.error_count} hata · gizlenmez</small></summary>
+              {holdoutResult.errors.length > 0 ? <div className='technicalPredictionList'>
+                {holdoutResult.errors.map(item => <div className='technicalPrediction fail' key={item.id}>
+                  <div><b>! {item.scenario_topic}</b><span>{item.challenge} · {item.difficulty}</span></div>
+                  <p>{item.text}</p>
+                  <small>Beklenen: <b>{item.expected_label}</b> • Gerçek tahmin: <b>{item.predicted_label}</b></small>
+                  <small>{item.model_confidence === null ? 'Yapısal karar' : `%${Math.round(item.model_confidence * 100)} model güveni`}</small>
+                </div>)}
+              </div> : <p>Bu çalıştırmada ayrı proje içi örneklerde hata bulunmadı; sonuç bağımsız akademik benchmark değildir.</p>}
+            </details>
+          </>}
+
           {scenarioResult && <>
             <div className='moduleCard technicalScenarioDetailCard'>
               <div className='technicalSectionHeading'>
@@ -2747,9 +3449,11 @@ function TechnicalPanel({result, scenarioResult, loading, running}:{
               <div className='technicalLiveMetrics'>
                 <span><b>{scenarioResult.structural_decision_count}</b> yapısal karar</span>
                 <span><b>{scenarioResult.transformer_inference_count}</b> gerçek Transformer çıkarımı</span>
+                {typeof scenarioResult.semantic_guardrail_count === 'number' && <span><b>{scenarioResult.semantic_guardrail_count}</b> anlamsal koruma</span>}
                 <span><b>{formatDuration(scenarioResult.elapsed_ms)}</b> toplam</span>
               </div>
               <small>{scenarioResult.dataset.limitation}</small>
+              {scenarioResult.dataset.calibration_note && <small className='technicalCalibrationNote'>{scenarioResult.dataset.calibration_note}</small>}
             </div>
 
             <div className='moduleCard technicalScenarioTopicsCard'>
@@ -2905,7 +3609,7 @@ function ProfileWorkspace({
   onRefresh:()=>Promise<void>;
   onSelectHistory:(historyId:number)=>Promise<void>;
   onOpenHistory:(item:AnalysisHistoryItem)=>Promise<void>;
-  onSave:(payload:{display_name:string;handle:string;bio:string})=>Promise<void>;
+  onSave:(payload:{display_name:string;handle:string;bio:string})=>Promise<boolean>;
 }) {
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -2953,7 +3657,7 @@ function ProfileWorkspace({
                 </div>
                 <label><span>Kısa açıklama</span><textarea value={bio} onChange={e => setBio(e.target.value)} /></label>
                 <div className='profileEditActions'>
-                  <button className='primary compact' disabled={saving || !displayName.trim()} onClick={async () => { await onSave({display_name:displayName,handle,bio}); setEditing(false); }}>{saving ? 'Kaydediliyor…' : 'Kaydet'}</button>
+                  <button className='primary compact' disabled={saving || !displayName.trim()} onClick={async () => { const saved = await onSave({display_name:displayName,handle,bio}); if (saved) setEditing(false); }}>{saving ? 'Kaydediliyor…' : 'Kaydet'}</button>
                   <button className='ghost compact' disabled={saving} onClick={() => { setDisplayName(profile.user.display_name); setHandle(profile.user.handle); setBio(profile.user.bio); setEditing(false); }}>Vazgeç</button>
                 </div>
               </div>
@@ -3060,6 +3764,14 @@ function ProfilePanel({detail, loading, opening, onOpen}:{
 
 function NavWorkspace({page, onOpenHome}:{page:NavPage; onOpenHome:()=>void}) {
   const content: Record<Exclude<NavPage,'Ana Sayfa'>, {title:string; subtitle:string; cards:{title:string; text:string; badge:string}[]}> = {
+    'Sunum Modu': {
+      title: 'Sunum Modu',
+      subtitle: 'Jüri akışı, canlı hazırlık denetimi ve kanıt ekranları.',
+      cards: [
+        {title:'Hazırlık denetimi', text:'Veritabanı, demo sözleşmesi ve Köprü sınırını tek istekte kontrol eder.', badge:'Canlı'},
+        {title:'4:30 anlatı akışı', text:'Problem, çalışan çözüm, teknik kanıt, kullanım sınırı ve kapanış.', badge:'Final'},
+      ],
+    },
     'Keşfet': {
       title: 'Keşfet',
       subtitle: 'N-KÖPRÜ için örnek gündem ve tartışma kümeleri.',
@@ -3113,6 +3825,14 @@ function NavWorkspace({page, onOpenHome}:{page:NavPage; onOpenHome:()=>void}) {
         {title:'Konu listeleri', text:'SQLite üzerinde tutulan kullanıcı listeleri ve öğeleri.', badge:'Liste'},
       ],
     },
+    'Kontrollü Senaryo': {
+      title: 'Kontrollü Senaryo',
+      subtitle: 'Sabit tartışma örneklerinde ham yorum akışı ile N-KÖPRÜ görünümünü karşılaştır.',
+      cards: [
+        {title:'İki sabit konu', text:'Gece ulaşımı ve park saatleri üzerine aynı iki aşamalı demo akışı.', badge:'2 senaryo'},
+        {title:'Veri sınırı', text:'Gerçek kullanıcı hesabı, canlı platform verisi ve etki sonucu toplanmaz.', badge:'Yerel'},
+      ],
+    },
     'Teknik Doğrulama': {
       title: 'Teknik Doğrulama',
       subtitle: 'Çalıştırılabilir iç doğrulama ve gerçek analiz gecikmesi.',
@@ -3153,12 +3873,14 @@ function NavWorkspace({page, onOpenHome}:{page:NavPage; onOpenHome:()=>void}) {
 
 function NavContext({page}:{page:NavPage}) {
   const notes: Record<Exclude<NavPage,'Ana Sayfa'>, {title:string; items:string[]}> = {
+    'Sunum Modu': {title:'Finalist sunum konsolu', items:['Canlı sistem hazırlığı', 'Süre kontrollü anlatı', 'Tek tıkla kanıt ekranları']},
     'Keşfet': {title:'Keşfet modülü', items:['Anlık arama ve Türkçe duyarlı eşleşme', 'Konu ve etiket filtreleri', 'Tartışmayı aç / hızlı analiz']},
     'Bildirimler': {title:'Bildirim merkezi', items:['Yeni görüş kümesi', 'Kaynak talebi', 'Köprü güncellemesi']},
     'Mesajlar': {title:'Mesajlaşma katmanı', items:['Köprü kartı paylaşımı', 'Ekip içi iletişim', 'Kalıcı çalışma alanı']},
     'Yer İmleri': {title:'Kaydedilenler', items:['Tartışmalar', 'İddia kartları', 'Köprü soruları']},
     'Listeler': {title:'Konu listeleri', items:['AI & Eğitim', 'Dijital Etik', 'Gençlik & Sosyal Medya']},
     'Profil': {title:'Kullanıcı profili', items:['Analiz geçmişi', 'Köprü kartları', 'Takip edilen listeler']},
+    'Kontrollü Senaryo': {title:'Kontrollü demo senaryosu', items:['Sabit örneklerle iki aşamalı akış', 'Ham ve N-KÖPRÜ görünümünü karşılaştırma', 'Gerçek kullanıcı verisi yok']},
     'Teknik Doğrulama': {title:'Teknik doğrulama', items:['Elle etiketli iç senaryolar', 'Gerçek analiz gecikmesi', 'Şeffaf model kullanımı']},
   };
   if (page === 'Ana Sayfa') return null;

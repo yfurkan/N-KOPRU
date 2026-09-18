@@ -1,0 +1,61 @@
+N-KÖPRÜ v1.4.1 — BAĞLAMA DUYARLI GÖRÜŞ SINIFLANDIRMA TEST RAPORU
+================================================================
+
+Sürüm: v1.4.1
+Sabit yarışma teslimi: v1.4.0-teknofest-final (değiştirilmedi)
+
+BACKEND REGRESYONU
+------------------
+Komut: python -m unittest discover -s tests -p "run_*.py"
+Toplam test paketi: 46
+Önceki sürümden korunan testler: 808
+v1.4.1 ile eklenen testler: 172
+Toplam çalışan test: 980
+Başarısızlık: 0
+Hata: 0
+Sonuç: 980 / 980 BAŞARILI
+
+EKLENEN TEST PAKETLERİ
+----------------------
+run_stance_semantics_regression.py: 108 test
+  - 42 yeni cümle hibrit yapısal yolda ayrı ayrı doğrulandı.
+  - Aynı 42 cümle modelsiz yedek yolda ayrı ayrı doğrulandı.
+  - 24 olumsuzlama, öncelik, konu sınırı ve model çağrısı kontrolü yapıldı.
+run_stance_semantics_evaluation_regression.py: 38 test
+  - Altı eski yanlış sınıflandırma gerçek karar gerekçeleriyle doğrulandı.
+  - SQLite kalıcılığı ve v1.4.0 sonuçlarıyla geriye uyumluluk korundu.
+  - 80 örnek, model/yapısal karar sayısı ve dürüstlük notları doğrulandı.
+run_stance_semantics_ui_contract.py: 26 test
+  - Teknik Doğrulama ekranı, isteğe bağlı alanlar ve merkezi sürüm doğrulandı.
+
+KONTROLLÜ ÇOK SENARYOLU DOĞRULAMA
+--------------------------------
+Veri: Önceden bulunan 80 elle etiketlenmiş proje içi Türkçe örnek
+Yapısal karar: 77
+Gerçek model değerlendirmesi gerektiren yorum: 3
+Açıklanabilir anlam koruması: 13
+Kalan 3 yorum için deterministik test modeli sonucu: 80 / 80
+Doğruluk: 1.0
+Macro-F1: 1.0
+ÖNEMLİ SINIR: Bu değer kontrollü model taklidiyle çalışan regresyon
+koşusudur. Kullanıcının gerçek sonucu gerçek mDeBERTa çıktısına bağlıdır.
+Önceki hatalar geliştirme sırasında incelendiği için aynı 80 cümle bağımsız
+tutma testi, dış veri seti veya akademik başarı iddiası değildir.
+
+FRONTEND DOĞRULAMASI
+--------------------
+Komut: ./node_modules/.bin/tsc --noEmit
+Sonuç: BAŞARILI
+Komut: npm run build
+Sonuç: Next.js 15.4.6 üretim derlemesi BAŞARILI
+
+KORUNAN ÜRÜN DAVRANIŞLARI
+-------------------------
+- FastAPI + Next.js + SQLite mimarisi ve kalıcı kullanıcı verileri.
+- Sekiz analiz adımı; Profil, geçmiş, bildirim, mesaj, yer imi ve listeler.
+- Bildirim dedup ve silinen bildirimlerin yeniden üretilmemesi.
+- İddia önbelleği, ilk/tekrar analiz ayrımı ve teknik doğrulama.
+- Demo kaynak farkındalığı %25.
+- İki açık kaynak sorusu: yorum #6 ve #13.
+- Köprü sorusu en fazla 28 kelime.
+- CPU/GPU'dan bağımsız, belirli ekran kartı gerektirmeyen çalışma.

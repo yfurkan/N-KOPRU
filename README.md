@@ -1,236 +1,308 @@
-# N-KÖPRÜ
+# N-KÖPRÜ — v1.5.0 finalist kaynak teslimi
 
-### Yapay Zekâ Destekli Sosyal Tartışma Zekâsı Sistemi
+N-KÖPRÜ, uzun sosyal tartışmaları okunabilir bir karar ve anlayış haritasına
+dönüştüren yerel çalışan bir sosyal tartışma zekâsı uygulamasıdır. Sistem,
+bir görüşü doğru ilan etmez veya kullanıcıya ne düşünmesi gerektiğini söylemez.
+Yorumların hangi görüş kümelerinde toplandığını, hangi iddiaların kanıt
+istediğini, hangi soruların açık kaldığını ve tarafların hangi ölçütlerde
+ayrıştığını görünür hâle getirir.
 
-**TEKNOFEST 2026 · N’Sosyal İnovasyon Yarışması · Sosyal Yapay Zekâ**
+## Bu klasör hangi sürümdür?
 
-N-KÖPRÜ, yüksek hacimli sosyal medya tartışmalarındaki görüşleri, ortak
-zemini, temel ayrışmaları, doğrulanabilir iddiaları ve cevapsız soruları
-görünür hâle getiren çalışan bir tartışma analiz platformudur. Amaç,
-konuşmaları susturmak değil; anlayışı ve nitelikli etkileşimi büyütmektir.
+Bu paket **N-KÖPRÜ v1.5.0 finalist yazılımının `main` dalına gönderilecek
+son kaynak durumudur**. Teknik rapor yarışmaya daha önce gönderilmiş temel
+teslimi ve v1.4.0 ölçümlerini belgelemektedir; bu klasörün çalışan uygulama
+sürümü v1.5.0’dır. Eski sürüm kayıtları yalnızca geçmişi izlemek için
+`CHANGELOG.md`, `docs/release-notes/` ve `docs/test-reports/` altında tutulur.
 
-| Çok senaryolu Macro-F1 | Gerçek sınıflandırma | Otomatik testler | Çalışan analiz adımı |
-|:---:|:---:|:---:|:---:|
-| **%92,5** | **74 / 80 doğru** | **808 / 808 başarılı** | **8 modül** |
+| Kontrol | Sonuç |
+|---|---:|
+| Güncel uygulama sürümü | **v1.5.0** |
+| Çalışan analiz modülü | **8** |
+| Backend otomatik testi | **1.240 / 1.240** |
+| Zorunlu hazırlık kontrolü | **5 / 5** |
+| Frontend üretim derlemesi | **Başarılı** |
+| Production bağımlılık denetimi | **0 açık** |
 
-> Bu sonuçlar dört konuda hazırlanmış, 80 elle etiketlenmiş **proje içi**
-> doğrulama örneğine aittir. Bağımsız akademik benchmark, dış veri seti
-> başarısı veya gerçek kullanıcı performansı olarak yorumlanmamalıdır.
+Bu sayılar proje içi yazılım doğrulamasıdır. Kullanıcı etkisi ölçümü, canlı
+sosyal medya hesabı, dış platform senkronizasyonu, saha sonucu veya bağımsız
+akademik benchmark sonucu olarak sunulmaz.
 
-**Teslim sürümü:** `v1.4.0` ·
-**Sabit TEKNOFEST teslimi:** [`v1.4.0-teknofest-final`](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest-final)
+## Teslim kapsamı ve veri sınırı
 
-![N-KÖPRÜ v1.4.0 çalışan uygulama: tartışma akışı ve sekiz adımlı analiz paneli](docs/screenshots/analysis-panel.webp)
+- Uygulama FastAPI + Next.js + SQLite ile yerel bilgisayarda çalışır.
+- Jüri demosu, depoya dahil sabit örnek tartışma üzerinden tekrarlanabilir.
+- Canlı sosyal medya hesabına, dış yorum akışına veya ücretli dış LLM API’sine
+  bağlantı yoktur.
+- Kullanıcı isterse ana ekrandan kendi yerel tartışma örneğini girebilir; bu
+  veri yalnızca çalıştırılan yerel SQLite sürecinde tutulur ve GitHub’a
+  gönderilmez.
+- `Kontrollü Senaryo` ekranı iki sabit senaryoda ham yorum akışı ile
+  N-KÖPRÜ görünümünü gösterir. Bu akış gerçek kullanıcı verisi toplamaz,
+  gerçek etki metriği üretmez ve dışa aktarılabilir kullanıcı sonucu sunmaz.
+- `.env`, veritabanı, model önbelleği, sanal ortam, `node_modules` ve derleme
+  çıktıları `.gitignore` ile kaynak tesliminin dışında tutulur.
 
-## Hangi problemi çözüyor?
+## Sekiz analiz modülü
 
-Uzun sosyal medya tartışmalarında tekrar eden yorumlar, karşıt görüşler,
-kanıtsız iddialar ve yanıtlanmamış sorular birbirine karışır. N-KÖPRÜ,
-tartışmayı okunabilir bir bilgi haritasına dönüştürür; farklı tarafların
-gerçekte nerede ayrıştığını ve hangi ortak ölçütlerle konuşabileceklerini
-açıkça gösterir.
+| Sıra | Modül | Yöntem ve çıktı |
+|---:|---|---|
+| 1 | **Tartışmayı Anla** | Yorumları tek tek değerlendirir; kısa özet, yorum sayısı, görüş dağılımı ve ana ayrışmaları üretir. |
+| 2 | **Ortak Zemin** | Farklı görüş kümelerinde tekrar eden tema ve gerekçeleri çapraz yorum kanıtlarıyla çıkarır. |
+| 3 | **Görüş Haritası** | Yorumları destekleyen, karşı/sınırlayıcı, koşullu/dengeli ve soru/tarafsız kümelerine ayırır; her küme için temsilci yorum ve gerekçe gösterir. |
+| 4 | **İddia Radarı** | Sayı, neden-sonuç, karşılaştırma ve doğrulanabilir olgu iddialarını aday olarak işaretler; hangi kanıtın gerektiğini açıklar. |
+| 5 | **Cevapsız Sorular** | Bilgi veya kaynak isteyen soruları, bunlara cevap veren yorumları ve sorunun hangi görüşleri etkilediğini birlikte gösterir. |
+| 6 | **Yanıt Koçu** | Hakareti ve kişisel saldırıyı çıkarır; kaynak talebini, sayıyı, soruyu, ironi/koşul ve ana görüşü koruyarak yapıcı bir yanıt önerir. |
+| 7 | **Ben Yokken Ne Değişti?** | Önceki analiz anlık görüntüsüyle güncel içeriği karşılaştırır; yalnızca anlamlı yeni yorum, iddia, soru veya Köprü değişikliğini gösterir. |
+| 8 | **Köprü Oluştur** | Ortak kabulü, ana ayrışmayı ve eksik bilgiyi birleştirerek kısa ve konuya bağlı bir sonraki soru üretir. |
 
-## Sekiz çalışan analiz modülü
+Bu modüller tek bir analiz kaydında birbirinden kopuk kartlar olarak değil,
+aynı tartışma ve aynı konu bağlamı üzerinden çalışır. Böylece Görüş Haritası
+ile Köprü’de kullanılan konu ölçütleri, Tartışmayı Anla ve Cevapsız Sorular
+çıktılarıyla tutarlı kalır.
 
-| Adım | Modül | Üretilen çıktı |
-|:---:|---|---|
-| 1 | **Tartışmayı Anla** | Tartışma özeti, temel ayrışmalar ve ölçülebilir göstergeler |
-| 2 | **Ortak Zemin** | Karşıt görüşler arasında kesişen tema ve gerekçeler |
-| 3 | **Görüş Haritası** | Görüş kümeleri, temsilci yorumlar ve kümeler arası ilişkiler |
-| 4 | **İddia Radarı** | Doğrulanabilir iddia adayları, öncelik ve gerekli kanıt türü |
-| 5 | **Cevapsız Sorular** | Kaynak/bilgi soruları, yanıt bağlantıları ve öncelik |
-| 6 | **Yanıt Koçu** | Yapıcı ve güvenli yanıt önerileri |
-| 7 | **Ben Yokken Ne Değişti?** | Anlık görüntüler arasındaki gerçek içerik değişiklikleri |
-| 8 | **Köprü Oluştur** | Ortak kabul, temel ayrışma ve kısa köprü sorusu |
+## v1.5.0’da finalist için tamamlananlar
 
-**Kalıcı ürün modülleri:** Profil, analiz geçmişi, anlık görüntü
-karşılaştırması, anlamlı değişiklik odaklı bildirimler, mesajlar, yer imleri,
-listeler ve teknik doğrulama. Kullanıcı verileri SQLite üzerinde kalır;
-silinen bildirimler yeniden üretilmez.
+### Sunum Modu
+
+Sunum Modu, uygulamanın yerine geçen ayrı bir ürün değil, jüri demosunu
+kontrollü biçimde açan bir kumandadır. 4:30 sayaç, beş anlatı adımı, canlı
+demo hazırlama durumu ve sistem hazırlık kontrolü içerir. Demo bir kez
+hazırlandıktan sonra özet, Görüş Haritası ve Köprü düğmeleri aynı analiz
+sonucunun ilgili sekmesine geçer; her düğme yeni ve farklı bir veri üretmez.
+
+### Hazırlık ve hata görünürlüğü
+
+`GET /api/system/readiness` SQLite bütünlüğünü, uygulama şemasını, sabit demo
+verisini, sekiz analiz çıktısını ve Köprü kelime sınırını kontrol eder. Zorunlu
+kontroller 5/5 ise sunum akışı hazır kabul edilir. Transformer veya üretken
+model yüklenmezse bu durum hata gibi gizlenmez; yapısal/yedek motor açıkça
+etiketlenir ve demo devam eder.
+
+### Yanıt Koçu
+
+Yanıt Koçu iki katmanlıdır:
+
+1. Yüksek güvenli Türkçe yapısal sinyaller; hakaret, kişisel saldırı, kaynak
+   talebi, ironi, dengeli görüş, soru ve sayısal iddia gibi durumları hızlıca
+   ayırır.
+2. Belirsiz durumlarda isteğe bağlı, yerel Qwen üretimi aday olarak denenir.
+   Aday; saldırı, prompt sızıntısı, ana görüş kaybı, sayı/link kaybı ve
+   uygunsuz uzunluk kontrollerinden geçmeden kullanıcıya verilmez.
+
+Görüş ve iddia analizi için `mDeBERTa-XNLI` isteğe bağlı ikinci katmandır.
+Qwen yalnızca Yanıt Koçu üretim adayı içindir; iki model zorunlu değildir ve
+uygulama dışarıdan bir token servisine bağlı değildir.
+
+### Kullanılabilirlik ve yerel çalışma
+
+Mobil menü ve analiz çekmecesi, görünür klavye odağı, skip-link, canlı bölge,
+ok tuşlarıyla sekme gezinmesi ve azaltılmış hareket desteği eklidir.
+Frontend, tarayıcının açıldığı makine adını kullanarak FastAPI’nin `:8000`
+adresini bulur. Backend yalnızca localhost ve özel ağdaki port `3000`
+frontend origin’lerine izin verir; dış ağ origin’leri varsayılan olarak kabul
+edilmez.
 
 ## Teknik mimari
 
-![N-KÖPRÜ v1.4.0 teknik mimarisi: Next.js, FastAPI, hibrit analiz, isteğe bağlı Yanıt Koçu ve SQLite](docs/architecture/technical-architecture.webp)
+![N-KÖPRÜ v1.5.0 teknik mimarisi](docs/architecture/technical-architecture-v1.5.0.svg)
 
-| Katman | Kullanılan teknoloji |
+| Katman | Teknoloji ve sorumluluk |
 |---|---|
-| Web arayüzü | Next.js 15, React 19 ve TypeScript |
-| HTTP API | FastAPI, Pydantic ve Uvicorn |
-| Görüş ve iddia analizi | Türkçe yapısal sinyaller + `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` |
-| İsteğe bağlı Yanıt Koçu | Ayrı ve yerel `Qwen/Qwen2.5-0.5B-Instruct` katmanı |
-| Kalıcılık | SQLite, anlık görüntüler, olay parmak izleri ve içerik önbelleği |
+| Arayüz | Next.js 15.5.25, React 19, TypeScript; analiz sekmeleri, Sunum Modu ve yerel çalışma alanları |
+| API | FastAPI, Pydantic, Uvicorn; doğrulanmış JSON sözleşmeleri ve hata yanıtları |
+| Analiz | Türkçe yapısal sinyaller, konu bağlamı, isteğe bağlı mDeBERTa-XNLI ve Yanıt Koçu katmanı |
+| Kalıcılık | SQLite; tartışma, analiz geçmişi, anlık görüntü, bildirim, mesaj, yer imi ve liste kayıtları |
+| Kalite kapısı | Python `unittest`, `compileall`, TypeScript, Next.js production build ve `npm audit` |
 
-Hibrit motor, yüksek güvenli Türkçe yapısal sinyallerle çözülebilen
-ifadelerde gereksiz model çıkarımı yapmaz. Belirsiz yorumlarda mDeBERTa-XNLI
-devreye girer. Üretken Qwen modeli yalnızca isteğe bağlı Yanıt Koçu
-akışının parçasıdır; bütün analizler için zorunlu bir dış LLM API çağrısı
-veya ücretli token servisi kullanılmaz.
+## Sıfırdan kurulum — Windows
 
-Uygulama **CPU üzerinde çalışabilir**. Uyumlu GPU hızlandırması isteğe
-bağlıdır; belirli bir bilgisayar veya ekran kartı modeli zorunlu değildir.
-
-## Ölçülmüş teknik doğrulama
-
-![N-KÖPRÜ Teknik Doğrulama ekranı: 80 örnek, 74 doğru sınıflandırma ve çok senaryolu sonuçlar](docs/screenshots/technical-validation.webp)
-
-### Dört konuda 80 elle etiketlenmiş örnek
-
-| Tartışma konusu | Doğru / toplam | Doğruluk |
-|---|:---:|:---:|
-| Akademik yapay zekâ | 19 / 20 | %95 |
-| Okulda telefon kullanımı | 18 / 20 | %90 |
-| Kampüste gece ulaşımı | 19 / 20 | %95 |
-| Uzaktan çalışma | 18 / 20 | %90 |
-| **Toplam** | **74 / 80** | **%92,5** |
-
-- Dört görüş sınıfının her biri **20 örnekle** dengeli temsil edilir.
-- Temel ifadeler: **32 / 32 doğru**; zor ve örtük ifadeler: **42 / 48 doğru**.
-- **71** karar Türkçe yapısal sinyallerle, **9** karar gerçek Transformer
-  çıkarımıyla üretilmiştir.
-- **6 sınıflandırma hatası** gizlenmez; beklenen ve gerçekleşen görüşler
-  Teknik Doğrulama ekranında ayrı ayrı gösterilir.
-- Bir yerel CPU ölçümünde ilk/soğuk analiz yaklaşık **2,7–3,1 saniye**,
-  önbellekli tekrar yaklaşık **10–12 milisaniye** sürmüştür. Süreler cihaza,
-  model durumuna ve tartışma içeriğine göre değişir.
-
-### Sınıf bazlı sonuçlar
-
-| Görüş sınıfı | Precision | Recall | F1 | Destek |
-|---|:---:|:---:|:---:|:---:|
-| Destekleyen | %100 | %85 | %91,9 | 20 |
-| Karşı / Sınırlayıcı | %81,8 | %90 | %85,7 | 20 |
-| Koşullu / Dengeli | %95,2 | %100 | %97,6 | 20 |
-| Soru / Tarafsız | %95 | %95 | %95 | 20 |
-
-### Karışıklık matrisi
-
-Satırlar elle belirlenen etiketi, sütunlar sistemin gerçek tahminini gösterir.
-
-| Beklenen ↓ / Tahmin → | Destek | Karşı | Koşul | Soru |
-|---|:---:|:---:|:---:|:---:|
-| **Destek** | 17 | 3 | 0 | 0 |
-| **Karşı** | 0 | 18 | 1 | 1 |
-| **Koşul** | 0 | 0 | 20 | 0 |
-| **Soru** | 0 | 1 | 0 | 19 |
-
-## Sıfırdan kurulum
-
-Önerilen gereksinimler: **Python 3.11 veya 3.12**, **Node.js 20+** ve Git.
-Backend ve frontend iki ayrı terminalde çalıştırılır.
+Gereksinimler: Python 3.11 veya 3.12, Node.js 20 veya üzeri ve Git.
 
 ### 1. Kaynak kodu indir
 
-```bash
-git clone https://github.com/yfurkan/N-KOPRU.git
+```powershell
+git clone <GITHUB_REPO_URL>
 cd N-KOPRU
 ```
 
-### 2. Backend — Windows / PowerShell
+`<GITHUB_REPO_URL>` yerine takımın gerçek GitHub depo adresini yazın. Depo
+adresini README’ye sabit kullanıcı adıyla gömmek yerine yükleme rehberinde
+yerine koymak, teslim sonrası adres değişse bile dokümanı kullanılabilir
+tutar.
+
+### 2. Backend’i başlat
 
 ```powershell
 cd backend
 py -3.12 -m venv .venv
+Set-ExecutionPolicy -Scope Process Bypass
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Python 3.12 yerine kurulu başka bir desteklenen sürüm kullanılıyorsa sanal
-ortam `python -m venv .venv` komutuyla da oluşturulabilir.
+İsterseniz kökteki `N_KOPRU_BACKEND_BASLAT.bat` dosyasını da
+`.venv` oluşturulduktan sonra çalıştırabilirsiniz.
 
-### Backend — macOS / Linux
+### 3. Frontend’i ikinci terminalde başlat
+
+İkinci PowerShell penceresinde depo kökünden:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Tarayıcıdan `http://localhost:3000` adresini açın. Backend sağlık kontrolü
+`http://127.0.0.1:8000/health`, etkileşimli API dokümantasyonu
+`http://127.0.0.1:8000/docs` adresindedir.
+
+Frontend için kökteki `N_KOPRU_FRONTEND_BASLAT.bat` dosyası da kullanılabilir.
+`npm approve-scripts` gibi ek bir komut gerekli değildir.
+
+### 4. Jüri demosunu aç
+
+1. **Sunum Modu** menüsüne girin.
+2. Hazırlık kartlarında `5/5` ve `HAZIR` durumunu bekleyin.
+3. **Demo verisini hazırla** düğmesine basın.
+4. Aynı tartışma için **Canlı Özeti Aç**, **Görüş Haritasını Aç** ve
+   **Köprü Sorusunu Aç** düğmelerini kullanın.
+5. Gerekirse **Teknik Doğrulama** ekranında proje içi kontrolleri çalıştırın.
+6. **Kontrollü Senaryo** yalnızca sabit örnek akışını gösterir; gerçek
+   kullanıcı verisi veya etki sonucu için kullanılmaz.
+
+AI modellerinin indirilmesi demo için zorunlu değildir. İsteğe bağlı model
+kurulumu ve ortam değişkenleri [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md)
+dosyasındadır. İlk model kurulumu internet erişimi ve disk alanı gerektirebilir;
+model olmadan yapısal yedek motor kullanılır.
+
+## macOS / Linux kurulumu
 
 ```bash
-cd backend
+git clone <GITHUB_REPO_URL>
+cd N-KOPRU/backend
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### 3. Frontend — ikinci terminal
-
-Proje kök dizininden:
+İkinci terminalde:
 
 ```bash
-cd frontend
-npm install
+cd N-KOPRU/frontend
+npm ci
 npm run dev
 ```
 
-| Servis | Adres |
-|---|---|
-| Uygulama | http://localhost:3000 |
-| Backend sağlık kontrolü | http://127.0.0.1:8000/health |
-| Etkileşimli API dokümantasyonu | http://127.0.0.1:8000/docs |
+## Kontrolleri çalıştırma
 
-### 4. Gerçek AI modelleri — isteğe bağlı
+### API kabul kontrolü
 
-Backend sanal ortamı etkin durumdayken:
+Kök klasörden, backend test bağımlılıkları kurulu bir ortamda:
 
-```bash
-pip install -r requirements-ai.txt
-```
-
-Uygulamada AI modelini hazırla; ilk kullanımda ilgili model dosyaları
-indirilebilir. AI paketleri olmadan uygulama, desteklenen yapısal/yedek
-analiz davranışıyla açılır. GPU zorunlu değildir.
-
-## Testleri çalıştırma
-
-Backend dizininde ve sanal ortam etkinken:
-
-```bash
+~~~bash
+cd backend
 pip install -r requirements-test.txt
+cd ..
+python scripts/api_smoke.py
+~~~
+
+Bu script gerçek kullanıcı veya dış servis kullanmadan geçici SQLite üzerinde
+35 temel API akışını kontrol eder ve veritabanını çalışmanın sonunda siler.
+
+### Backend
+
+```bash
+cd backend
+python -m compileall -q app tests
 python -m unittest discover -s tests -p "run_*.py" -v
 ```
 
-Teslim sürümünde **43 test paketi ve 808 başarılı otomatik test** bulunur.
-Bildirim tekilleştirme, SQLite kalıcılığı, canlı tartışma, görüş tutarlılığı,
-iddia önbelleği, sekiz analiz adımı ve arayüz sözleşmeleri test kapsamındadır.
-
-Frontend kontrolleri:
+### Frontend
 
 ```bash
-npx tsc --noEmit
+cd frontend
+npm ci
 npm run build
+npx tsc --noEmit
+npm audit --omit=dev --audit-level=high
 ```
+
+Bu teslimde doğrulanan backend sonucu `1.240 / 1.240`’dır. Testler geçici
+SQLite yolu kullanılacak şekilde çalıştırılmak istenirse `N_KOPRU_DB_PATH`
+ortam değişkeni açık bir dosya yoluna ayarlanabilir. Testler ve jüri demosu
+gerçek kullanıcı verisi gerektirmez.
+
+## Jüri için hızlı inceleme sırası
+
+Kodun ne yaptığını hızlıca görmek için şu sırayla ilerleyin:
+
+1. `VERSION.txt` ve `backend/app/version.py`: çalışan sürümün `1.5.0`
+   olduğunu kontrol edin.
+2. `backend/app/main.py`: API uçlarını ve CORS sınırını inceleyin.
+3. `backend/app/analyzer.py`, `viewpoint_engine.py`, `question_engine.py`,
+   `argument_engine.py` ve `coach_engine.py`: analiz katmanlarını okuyun.
+4. `frontend/app/page.tsx`: sekiz analiz adımını, Sunum Modu’nu ve kontrollü
+   demo akışını inceleyin.
+5. `GET /health` ve `GET /api/system/readiness`: çalışan sürümü ve hazırlığı
+   görün.
+6. `backend/tests/`: API, kalıcılık, görüş tutarlılığı, Yanıt Koçu,
+   erişilebilirlik ve v1.5.0 sözleşmelerini çalıştırın.
 
 ## Depo düzeni
 
-- [`backend/`](backend/): FastAPI API, analiz motorları ve 43 test paketi.
-- [`frontend/`](frontend/): Next.js uygulaması ve kullanıcı arayüzü.
-- [`docs/test-reports/`](docs/test-reports/): Bütün sürümlerin gerçek test,
-  denetim, geçiş ve benchmark çıktıları.
-- [`docs/release-notes/`](docs/release-notes/): Sürüm bazlı teslim notları.
-- [`docs/screenshots/`](docs/screenshots/): Çalışan uygulama ekran görüntüleri.
-- [`docs/architecture/`](docs/architecture/): Gerçek teknik mimari görseli.
-- [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md): İsteğe bağlı ortam
-  değişkenleri ve çalışma yapılandırması.
-- [`CHANGELOG.md`](CHANGELOG.md): Önceki bütün sürümlerin eksiksiz geçmişi.
-- [`VERSION.txt`](VERSION.txt): Kaynak paketin uygulama sürümü.
+```text
+N-KOPRU/
+├─ backend/
+│  ├─ app/                       # FastAPI ve analiz motorları
+│  ├─ tests/                     # Otomatik regresyon ve UI sözleşme testleri
+│  ├─ requirements.txt            # Demo için zorunlu backend bağımlılıkları
+│  ├─ requirements-test.txt       # Test bağımlılıkları
+│  └─ requirements-ai.txt         # İsteğe bağlı yerel AI bağımlılıkları
+├─ frontend/
+│  ├─ app/                       # Next.js arayüzü
+│  ├─ lib/                       # API istemcisi ve TypeScript tipleri
+│  ├─ package.json
+│  └─ package-lock.json
+├─ scripts/
+│  └─ api_smoke.py               # 35 maddelik geçici API kabul kontrolü
+├─ docs/
+│  ├─ architecture/              # Güncel v1.5.0 mimari çizimi
+│  ├─ archive/                   # Önceki sürümlerin tarihsel kanıtları
+│  ├─ release-notes/             # Sürüm notları
+│  ├─ test-reports/              # Test sonuçları ve sınırlılık notları
+│  ├─ CONFIGURATION.md
+│  ├─ FINALIST_RUNBOOK.md
+│  ├─ GITHUB_MAIN_TESLIM_REHBERI.md
+│  └─ PRIVACY_AND_AI_TRANSPARENCY.md
+├─ .github/workflows/quality.yml # main için otomatik kalite kapısı
+├─ CHANGELOG.md
+├─ VERSION.txt
+└─ .gitignore
+```
 
-Doğrudan teslim kanıtları:
+## Ölçüm ve iddia sınırı
 
-- [v1.4.0 test raporu](docs/test-reports/V1_4_0_TEST_RAPORU.txt)
-- [v1.4.0 makine okunabilir test sonuçları](docs/test-reports/V1_4_0_TEST_SONUCLARI.json)
-- [v1.4.0 sürüm notları](docs/release-notes/V1_4_0_RELEASE_NOTES.md)
-- [Sabit TEKNOFEST teslim dalı](https://github.com/yfurkan/N-KOPRU/tree/v1.4.0-teknofest-final)
+Teknik rapordaki 98/100 puan ve raporun v1.4.0 temelindeki 80 elle
+etiketlenmiş örnekten 74/80, %92,5 Macro-F1 sonucu geçmiş teslim kanıtıdır.
+Bu sayı v1.5.0 için gerçek kullanıcı başarısı değildir. v1.5.0’da gösterilen
+1.240 otomatik test; kod, API, kalıcılık ve arayüz sözleşmelerinin geçtiğini
+gösterir, kullanıcı etkisini ölçmez. Kaynak kodu bu ayrımı arayüzde ve
+raporlarda korur.
 
-## Veri güvenliği ve ölçüm sınırları
+## GitHub’a gönderme
 
-- `.env`, veritabanları, sanal ortamlar, `node_modules`, derleme çıktıları
-  ve özel anahtarlar kaynak depoya eklenmez.
-- Kullanıcı içeriği ile elle etiketlenmiş doğrulama verisi birbirinden ayrı
-  değerlendirilir; etiketsiz kullanıcı yorumlarına sahte doğruluk/F1 skoru
-  atanmaz.
-- Model güveni, yorumun doğruluğu veya kullanıcının haklılığı anlamına
-  gelmez; yalnızca ilgili sınıflandırma kararına ilişkindir.
-- Teknik sonuçlar proje içi doğrulamadır. Bağımsız veri seti, akademik
-  genelleme veya tamamlanmış kullanıcı pilotu iddiasında bulunulmaz.
+Windows üzerinde depo oluşturma, `main` dalına ilk commit’i atma, push sonrası
+kontrol ve jüriye verilecek bağlantı için
+[`docs/GITHUB_MAIN_TESLIM_REHBERI.md`](docs/GITHUB_MAIN_TESLIM_REHBERI.md)
+dosyasını uygulayın.
 
 ---
 
-**N-KÖPRÜ:** Farklı düşün. Daha iyi konuş.
+**N-KÖPRÜ v1.5.0 — farklı görüşleri, kanıt ihtiyacını ve ortak zemini aynı
+akışta görünür kılar.**

@@ -1,4 +1,4 @@
-N-KÖPRÜ v0.4.4 — YANIT KOÇU FİNAL TEST RAPORU
+N-KÖPRÜ v1.5.0 — YANIT KOÇU BİLEŞENİ FİNAL TEST RAPORU
 Tarih: 20 Ağustos 2026
 
 SONUÇ
@@ -9,7 +9,7 @@ SONUÇ
 - Backend Python py_compile/compileall: başarılı
 - FastAPI /health + /api/rewrite TestClient kontrolü: başarılı
 
-V0.4.4 İLE EKLENEN KRİTİK DÜZELTMELER
+v1.5.0 KAYNAĞINDA DOĞRULANAN KRİTİK DÜZELTMELER
 1. Açık ironi/sarkazm literal okunmuyor.
    Örnek: "Tabii canım, yapay zekâyı yasaklayınca bütün sorunlar sihirli şekilde çözülecek zaten."
    -> "Yapay zekâyı yasaklamanın tek başına bütün sorunları çözeceğini düşünmüyorum."
@@ -45,4 +45,5 @@ GERÇEK MODEL TEST NOTU
 Bu çalışma ortamında transformers modeli indirilebilir/ağ erişimli durumda olmadığı için Qwen/Qwen2.5-0.5B-Instruct gerçek inference testi burada yeniden koşturulmadı. Kritik ironi, dengeli görüş, kaynak, sayı, soru ve açık saldırı yolları üretken modele bağımlı değildir. Üretken yolun kabul/red mantığı sahte güvenli ve sahte hatalı adaylarla regresyon testinden geçirilmiştir.
 
 KARAR
-Yanıt Koçu v0.4.4 için ironi, dengeli görüş ve birleşik eleştiri düzeltmeleri tamamlandı. Mevcut test kümesinde regresyon bulunmadı.
+Yanıt Koçu bileşeninde ironi, dengeli görüş ve birleşik eleştiri düzeltmeleri
+tamamlandı. Mevcut test kümesinde regresyon bulunmadı.

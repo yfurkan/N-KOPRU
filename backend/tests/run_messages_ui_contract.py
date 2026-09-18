@@ -31,6 +31,8 @@ class MessagesUIContract(unittest.TestCase):
     def test_06_bridge_button_is_internal(self):
         self.assertIn('Köprüyü Mesajlarda Paylaş', PAGE)
         self.assertIn('shareCurrentBridgeToMessages', PAGE)
+        self.assertIn('bridgeShareBusyRef', PAGE)
+        self.assertIn('disabled={bridgeShareLoading}', PAGE)
 
     def test_07_bridge_return_link_exists(self):
         self.assertIn('İlgili Köprü analizini aç', PAGE)

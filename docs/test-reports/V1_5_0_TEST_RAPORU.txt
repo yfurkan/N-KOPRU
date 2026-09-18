@@ -1,0 +1,63 @@
+N-KÖPRÜ v1.5.0 — GITHUB MAIN ÖNCESİ YEREL TESLİM DENETİMİ
+Tarih: 2026-09-17
+Kaynak durumu: main dalına push öncesi temiz kaynak paketi
+
+Bu rapor, bu klasördeki kaynak kodun yerel doğrulamasıdır. GitHub Actions
+sonucu değildir; main dalına push sonrasında aynı kalite kapısı yeniden
+çalıştırılır.
+
+1. BACKEND TAM REGRESYON
+
+Komut:
+python -m unittest discover -s tests -p "run_*.py" -v
+
+Sonuç:
+- 54 test paketi
+- 1.240 / 1.240 başarılı
+- Hata: 0
+
+Kapsam:
+- analiz, konu bağlamı, görüş/iddia/soru tutarlılığı ve SQLite kalıcılığı
+- Sunum Modu readiness ve v1.5.0 arayüz sözleşmeleri
+- Yanıt Koçu güvenlik, anlam koruma, ironi, koşullu görüş, sayı ve kaynak
+  talebi regresyonları
+- sabit kontrollü demo senaryosu, iki faz, sıra ve idempotency
+- gerçek kullanıcı modunun reddedilmesi, gerçek metrik ve CSV yolunun kapalı
+  kalması
+- mesaj, bildirim, yer imi, liste, profil, geçmiş ve LAN sözleşmeleri
+
+2. FRONTEND VE PYTHON KALİTE KONTROLLERİ
+
+- python -m compileall -q app tests: BAŞARILI
+- npm run build: BAŞARILI
+- npx tsc --noEmit: BAŞARILI
+- npm audit --omit=dev --audit-level=high: 0 açık
+
+3. API KABUL DUMANI
+
+Komut:
+python scripts/api_smoke.py
+
+Sonuç:
+- 35 / 35 başarılı
+- health sürümü: 1.5.0
+- readiness: 5 zorunlu kontrolün 5’i hazır
+- sabit demo ve analiz: başarılı
+- Yanıt Koçu yapısal fallback: başarılı
+- yerel tartışma, yorum, geçmiş, mesaj, bildirim, yer imi, liste ve profil
+  akışları: başarılı
+- Kontrollü Senaryo iki fazı ve CSV’nin kullanıcı satırı üretmemesi: başarılı
+- gerçek kullanıcı modu: reddedildi
+- dış origin CORS isteği: reddedildi
+
+4. VERİ VE İDDİA SINIRI
+
+Bu kaynak teslimi gerçek kullanıcı verisi, canlı platform verisi veya saha
+etkisi sonucu içermez. Kontrollü Senaryo yalnızca sabit örneklerle yerel ürün
+akışını gösterir. Test sayıları proje içi kalite kanıtıdır; kullanıcı başarısı
+veya bağımsız akademik benchmark olarak yorumlanmaz.
+
+5. YENİDEN ÜRETİM
+
+Kurulum, iki terminalde çalıştırma, temiz klon kontrolü ve main’e push adımları
+README.md ile docs/GITHUB_MAIN_TESLIM_REHBERI.md dosyalarında verilmiştir.

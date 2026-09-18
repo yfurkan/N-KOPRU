@@ -1,6 +1,20 @@
-import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryResponse, BookmarkActionResponse, BookmarkKind, BookmarkResponse, CommentAppendResult, ConversationDetail, ConversationListResponse, ExploreResponse, MessageItem, NotificationActionResponse, NotificationResponse, Post, ProfileResponse, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicListActionResponse, TopicListDetail, TopicListResponse } from './types';
+import type { AIStatus, Analysis, AnalysisHistoryDetail, AnalysisHistoryResponse, BookmarkActionResponse, BookmarkKind, BookmarkResponse, CommentAppendResult, ConversationDetail, ConversationListResponse, ExploreResponse, MessageItem, NotificationActionResponse, NotificationResponse, PilotOverview, PilotSession, PilotPhaseResult, Post, ProfileResponse, SystemReadiness, TechnicalEvaluation, TechnicalScenarioEvaluation, TechnicalStatus, TopicListActionResponse, TopicListDetail, TopicListResponse } from './types';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000';
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+
+  // Keep LAN presentations usable without rebuilding the frontend with a
+  // machine-specific IP. The browser and FastAPI process are expected to run
+  // on the same host; the backend must be started with --host 0.0.0.0.
+  if (typeof window !== 'undefined' && window.location.hostname) {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+  return 'http://127.0.0.1:8000';
+}
+
+const API = resolveApiBase();
 
 export async function getDemoPost(): Promise<Post> {
   const res = await fetch(`${API}/api/posts/demo`, { cache: 'no-store' });
@@ -58,6 +72,19 @@ export async function runScenarioEvaluation(useAI = true): Promise<TechnicalScen
   return res.json();
 }
 
+export async function runHoldoutEvaluation(useAI = true): Promise<TechnicalScenarioEvaluation> {
+  const res = await fetch(`${API}/api/evaluation/holdout/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ use_ai: useAI }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Ayrılmış yeni iç kontrol çalıştırılamadı');
+  }
+  return res.json();
+}
+
 export async function analyzePost(postId: number, useAI = true): Promise<Analysis> {
   const res = await fetch(`${API}/api/analyze/${postId}?use_ai=${useAI ? 'true' : 'false'}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Analiz yapılamadı');
@@ -108,7 +135,13 @@ export async function rewriteComment(text: string, context = '', useAI = true) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, context, use_ai: useAI }),
   });
-  if (!res.ok) throw new Error('Yanıt koçu çalıştırılamadı');
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    const message = typeof detail?.detail === 'string'
+      ? detail.detail
+      : 'Yanıt Koçu çalıştırılamadı';
+    throw new Error(message);
+  }
   return res.json();
 }
 
@@ -343,6 +376,50 @@ export async function updateProfile(payload: { display_name: string; handle: str
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
     throw new Error(detail?.detail ?? 'Profil güncellenemedi');
+  }
+  return res.json();
+}
+
+export async function getSystemReadiness(): Promise<SystemReadiness> {
+  const res = await fetch(`${API}/api/system/readiness`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Sunum hazırlık denetimi çalıştırılamadı');
+  return res.json();
+}
+
+export async function getPilotOverview(): Promise<PilotOverview> {
+  const res = await fetch(`${API}/api/pilot`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Kontrollü demo özeti yüklenemedi');
+  return res.json();
+}
+
+export async function startPilotSession(consent: boolean, practice: boolean): Promise<PilotSession> {
+  const res = await fetch(`${API}/api/pilot/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ consent, practice }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Kontrollü demo başlatılamadı');
+  }
+  return res.json();
+}
+
+export async function submitPilotPhase(sessionId: number, payload: {
+  phase_index: number;
+  selected_answer: number;
+  duration_ms: number;
+  clarity_rating: number;
+  confidence_rating: number;
+}): Promise<{ result: PilotPhaseResult; session: PilotSession }> {
+  const res = await fetch(`${API}/api/pilot/sessions/${sessionId}/phases`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? 'Kontrollü demo adımı kaydedilemedi');
   }
   return res.json();
 }

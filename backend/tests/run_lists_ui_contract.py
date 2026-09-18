@@ -47,7 +47,8 @@ class ListsUIContract(unittest.TestCase):
     def test_10_list_page_prepares_missing_analysis_source(self):
         self.assertIn('ensureTopicListSourceAnalysis', PAGE)
         self.assertIn('topicListSourceBusyRef', PAGE)
-        self.assertIn("if (x === 'Listeler') { refreshTopicLists", PAGE)
+        self.assertIn("if (page === 'Listeler') {", PAGE)
+        self.assertIn('refreshTopicLists(selectedTopicListId).catch(() => null)', PAGE)
         self.assertIn('ensureTopicListSourceAnalysis().catch(() => null)', PAGE)
 
     def test_11_source_loading_error_and_retry_states_exist(self):

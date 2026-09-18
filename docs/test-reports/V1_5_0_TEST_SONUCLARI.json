@@ -1,0 +1,32 @@
+{
+  "version": "1.5.0",
+  "date": "2026-09-17",
+  "target_branch": "main",
+  "source_state": "push öncesi yerel doğrulama",
+  "backend": {
+    "test_packages": 54,
+    "tests_run": 1240,
+    "tests_passed": 1240,
+    "tests_failed": 0,
+    "compileall": "passed"
+  },
+  "frontend": {
+    "production_build": "passed",
+    "typescript": "passed",
+    "production_audit_vulnerabilities": 0
+  },
+  "api_smoke": {
+    "script": "scripts/api_smoke.py",
+    "checks": 35,
+    "passed": 35,
+    "failed": 0,
+    "readiness": "5/5 required checks ready",
+    "external_origin": "rejected",
+    "real_user_mode": "closed"
+  },
+  "github_actions": {
+    "status": "run after push to main",
+    "workflow": ".github/workflows/quality.yml"
+  },
+  "integrity_note": "All figures are project-internal software checks. No real-user impact or independent academic benchmark is claimed."
+}

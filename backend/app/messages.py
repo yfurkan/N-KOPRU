@@ -156,6 +156,25 @@ def share_bridge(
     with transaction(immediate=True) as conn:
         if not conn.execute('SELECT 1 FROM conversations WHERE id = ?', (conversation_id,)).fetchone():
             return None
+        # Sharing is safe to retry: a lost response or a double click must not
+        # create the same bridge card more than once in the same conversation.
+        existing_rows = conn.execute(
+            '''SELECT * FROM messages
+               WHERE conversation_id = ? AND attachment_json IS NOT NULL
+               ORDER BY id DESC''',
+            (conversation_id,),
+        ).fetchall()
+        for row in existing_rows:
+            try:
+                existing = MessageAttachment.model_validate(json.loads(row['attachment_json']))
+            except Exception:
+                continue
+            if (
+                existing.kind == attachment.kind
+                and existing.post_id == attachment.post_id
+                and existing.bridge_question == attachment.bridge_question
+            ):
+                return _message_from_row(row)
         cursor = conn.execute(
             '''INSERT INTO messages(conversation_id, author, text, created_at, is_mine, attachment_json)
                VALUES(?, 'Sen', ?, ?, 1, ?)''',

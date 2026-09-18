@@ -1,0 +1,84 @@
+N-KÖPRÜ v1.4.2 — KONU BAĞLAMI VE AYRILMIŞ İÇ KONTROL TEST RAPORU
+===================================================================
+
+Sürüm: v1.4.2
+Sabit yarışma teslimi: v1.4.0-teknofest-final (değiştirilmedi)
+GitHub deposu: Kullanıcı talimatı gereği değiştirilmedi
+
+BACKEND REGRESYONU
+------------------
+Komut: python -m unittest discover -s tests -p "run_*.py"
+Toplam test paketi: 50
+Önceki sürümden korunan testler: 980
+v1.4.2 ile eklenen testler: 184
+Toplam çalışan test: 1164
+Başarısızlık: 0
+Hata: 0
+Sonuç: 1164 / 1164 BAŞARILI
+
+EKLENEN TEST PAKETLERİ
+----------------------
+run_topic_context_regression.py: 51 test
+  - Dokuz tartışma konusu ve Türkçe büyük/küçük harf bağlamı doğrulandı.
+  - Görüş adı, ana gerekçe, özet ve Köprü aynı konu bağlamına bağlandı.
+  - Kanonik kimlikler, sabit akademik demo ve 28 kelime sınırı korundu.
+run_holdout_evaluation_regression.py: 51 test
+  - Beş yeni konuda 80 yeni cümle ve dengeli dört görüş sınıfı doğrulandı.
+  - Önceki 80 örnekle metin/konu çakışmasının sıfır olduğu doğrulandı.
+  - SHA-256 parmak izi, gerçek ölçüm, gerçek hatalar ve metrikler denendi.
+run_holdout_persistence_regression.py: 38 test
+  - Üç değerlendirme sonucu ayrı SQLite anahtarlarında saklandı.
+  - Profil, geçmiş, bildirim, mesaj, yer imi ve liste izolasyonu korundu.
+  - Silinen bildirimler yeniden oluşturulmadı; eski payload'lar korundu.
+run_topic_holdout_ui_contract.py: 44 test
+  - Yeni düğme, API, sıfır örtüşme, SHA-256 ve gerçek skorlar doğrulandı.
+  - Gerçek hata listesi, konu kartları, matris ve sınıf ölçümleri denendi.
+  - Önceki iki doğrulama ekranı ve donanımdan bağımsız davranış korundu.
+
+AYRILMIŞ YENİ PROJE İÇİ KONTROL
+------------------------------
+Sabit SHA-256: 1b4e8cb55023d1a1b99e32a2029ff3fd5c0a00f55dd79be6fb937453011fbdcf
+Yeni konu sayısı: 5
+Yeni cümle sayısı: 80
+Görüş sınıfı sayısı: 4
+Her görüş sınıfı: 20 cümle
+Temel ifade: 40
+Zor ve örtük ifade: 40
+Önceki setle ortak cümle: 0
+Önceki setle ortak konu: 0
+
+Gerçek modelsiz/yapısal yedek koşu:
+  Mahalle parkı erişimi: 14 / 16
+  Okul kantini beslenmesi: 14 / 16
+  Kentte geri dönüşüm: 14 / 16
+  Halk kütüphanesi erişimi: 14 / 16
+  Çocuklarda dijital oyun: 14 / 16
+  Toplam doğru: 70 / 80
+  Doğruluk: %87,5
+  Macro-F1: %90,18
+  Gizlenmeyen gerçek hata: 10
+  Gerçek model çıkarımı: 0 (model yüklenmemiş yedek motor koşusu)
+
+ÖNEMLİ SINIR: Bu veri önceki kalibrasyon cümlelerinden ve konularından
+ayrıdır ancak yine proje içi elle etiketli kontroldür. Bağımsız dış veri,
+akademik benchmark, bilimsel genelleme veya kullanıcı başarısı değildir.
+Gerçek mDeBERTa yüklendiğinde sonuç gerçek model kararlarına göre değişebilir.
+Yeni setin hataları bu sürümde yapay skor artırımı için kullanılmamıştır.
+
+FRONTEND DOĞRULAMASI
+--------------------
+Komut: ./node_modules/.bin/tsc --noEmit
+Sonuç: BAŞARILI
+Komut: npm run build
+Sonuç: Next.js 15.4.6 üretim derlemesi BAŞARILI
+
+KORUNAN ÜRÜN DAVRANIŞLARI
+-------------------------
+- FastAPI + Next.js + SQLite mimarisi ve kalıcı kullanıcı verileri.
+- Sekiz analiz adımı; Profil, geçmiş, bildirim, mesaj, yer imi ve listeler.
+- Bildirim dedup ve silinen bildirimlerin yeniden üretilmemesi.
+- İddia önbelleği, ilk/tekrar analiz ayrımı ve eski teknik doğrulamalar.
+- Demo kaynak farkındalığı %25.
+- İki açık kaynak sorusu: yorum #6 ve #13.
+- Köprü sorusu en fazla 28 kelime.
+- CPU/GPU'dan bağımsız, belirli ekran kartı gerektirmeyen çalışma.

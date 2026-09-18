@@ -18,6 +18,7 @@ from .models import (
     Viewpoint,
     ViewpointEvidence,
 )
+from .topic_context import TopicContext, resolve_topic_context
 
 
 THEME_SIGNALS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -45,7 +46,15 @@ def _is_restriction_context(title: str, comments: list[Comment]) -> bool:
     return restricted_comments >= max(2, round(len(comments) * 0.30))
 
 
-def _display_name(canonical_name: str, restricted: bool) -> str:
+def _display_name(
+    canonical_name: str,
+    restricted: bool,
+    topic: TopicContext | None = None,
+) -> str:
+    if topic is not None:
+        contextual = topic.display_name(canonical_name)
+        if contextual:
+            return contextual
     restricted_names = {
         'Koşullu / Dengeli': 'Kontrollü ve kurallı kullanım',
         'Karşı / Sınırlayıcı': 'Tam yasak veya güçlü sınırlama',
@@ -85,8 +94,38 @@ def _human_theme_list(themes: list[str], max_items: int = 2) -> str:
     return f'{chosen[0]} ile {chosen[1]}'
 
 
-def _main_argument(name: str, themes: list[str], restricted: bool) -> str:
+def _main_argument(
+    name: str,
+    themes: list[str],
+    restricted: bool,
+    topic: TopicContext | None = None,
+) -> str:
     focus = _human_theme_list(themes)
+    if topic is not None and topic.is_specific:
+        if name == 'Koşullu / Dengeli':
+            return (
+                f'{topic.subject.capitalize()} konusunda {topic.conditional_position} '
+                f'öneriliyor; kararın {focus} açısından birlikte değerlendirilmesi isteniyor.'
+            )
+        if name == 'Karşı / Sınırlayıcı':
+            return (
+                f'{topic.subject.capitalize()} konusunda {topic.restriction_position} '
+                f'savunuluyor; öne çıkan gerekçe {focus}.'
+            )
+        if name == 'Destekleyen':
+            return (
+                f'{topic.subject.capitalize()} konusunda {topic.support_position} '
+                f'savunuluyor; öne çıkan gerekçe {focus}.'
+            )
+        if name == 'Soru / Tarafsız':
+            return (
+                f'{topic.subject.capitalize()} kararının {focus} açısından güvenilir '
+                'veri, açıklama veya araştırmayla desteklenmesi isteniyor.'
+            )
+        return (
+            f'{topic.subject.capitalize()} konusunda belirgin bir taraf seçmeden '
+            f'{focus} için ek gözlem veya değerlendirme sunuluyor.'
+        )
     if name == 'Koşullu / Dengeli':
         if restricted:
             return f'Tam yasak yerine açık kurallar, denetim ve bağlama göre kullanım öneriliyor; ana gerekçe {focus}.'
@@ -154,12 +193,29 @@ def _opposing_names(name: str, available: set[str]) -> list[str]:
     return [other for other in priorities.get(name, []) if other in available][:2]
 
 
-def _relationship_note(name: str, opponents: list[str], shared_themes: list[str], restricted: bool) -> str:
+def _relationship_note(
+    name: str,
+    opponents: list[str],
+    shared_themes: list[str],
+    restricted: bool,
+    topic: TopicContext | None = None,
+) -> str:
     if name in NEUTRAL_NAMES:
         return 'Bu grup karşıt bir karar tarafı değildir; diğer görüşleri sınamak için soru, kanıt veya ek değerlendirme sağlar.'
     if not opponents:
         return 'Bu analizde doğrudan karşılaştırılabilecek belirgin bir karşıt görüş kümesi bulunmuyor.'
-    if name == 'Koşullu / Dengeli' and restricted:
+    if topic is not None and topic.is_specific:
+        own_position = topic.position(name)
+        opposing_positions = [topic.position(other) for other in opponents]
+        visible_opponents = [position for position in opposing_positions if position]
+        if own_position and visible_opponents:
+            difference = (
+                f'{topic.subject.capitalize()} konusunda {own_position}; '
+                f'{" ve ".join(visible_opponents)} yaklaşımlarından ayrışır.'
+            )
+        else:
+            difference = f'{topic.subject.capitalize()} konusunda diğer karar yaklaşımlarından ayrışır.'
+    elif name == 'Koşullu / Dengeli' and restricted:
         difference = 'Tam yasak ile geniş serbestlik arasında koşul ve denetim üzerinden ara bir yaklaşım sunar.'
     elif name == 'Karşı / Sınırlayıcı' and restricted:
         difference = 'Kullanım alanlarını koruyan veya kontrollü izin veren kümelerden sınırın sertliği konusunda ayrışır.'
@@ -183,6 +239,7 @@ def enrich_viewpoints(
 ) -> tuple[list[Viewpoint], dict]:
     started = time.perf_counter()
     restricted = _is_restriction_context(title, comments)
+    topic = resolve_topic_context(title)
     stance_by_id = {item.comment_id: item for item in stance_details}
     available_names = {item.name for item in viewpoints}
     enriched: list[Viewpoint] = []
@@ -207,15 +264,15 @@ def enrich_viewpoints(
             or group_ids.intersection(item.evidence_comment_ids)
         ]
         enriched.append(viewpoint.model_copy(update={
-            'display_name': _display_name(viewpoint.name, restricted),
+            'display_name': _display_name(viewpoint.name, restricted, topic),
             'comment_count': len(group_comments),
-            'main_argument': _main_argument(viewpoint.name, themes, restricted),
+            'main_argument': _main_argument(viewpoint.name, themes, restricted, topic),
             'evidence_comment_ids': [item.id for item in group_comments],
             'representative_comments': _representative_comments(group_comments, stance_by_id, themes),
             'dominant_themes': themes,
             'shared_themes': list(dict.fromkeys(shared))[:2],
             'opposing_viewpoint_names': opposing,
-            'relationship_note': _relationship_note(viewpoint.name, opposing, shared, restricted),
+            'relationship_note': _relationship_note(viewpoint.name, opposing, shared, restricted, topic),
             'related_claim_comment_ids': [item.comment_id for item in claims if item.comment_id in group_ids],
             'related_question_comment_ids': list(dict.fromkeys(linked_questions)),
             'model_comment_count': len(model_confidences),
@@ -226,6 +283,9 @@ def enrich_viewpoints(
     info = {
         'mode': 'contextual-evidence-grounded-viewpoints',
         'context': 'restriction-policy' if restricted else 'general-discussion',
+        'topic_key': topic.key,
+        'topic_subject': topic.subject,
+        'topic_specific': topic.is_specific,
         'cluster_count': len(enriched),
         'representative_count': sum(len(item.representative_comments) for item in enriched),
         'model_comment_count': sum(item.model_comment_count for item in enriched),

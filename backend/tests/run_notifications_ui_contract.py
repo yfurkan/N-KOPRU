@@ -39,6 +39,8 @@ class NotificationsUIContract(unittest.TestCase):
         self.assertIn('Okunmadı yap', PAGE)
         self.assertIn('Okundu yap', PAGE)
         self.assertIn('Bildirimi sil', PAGE)
+        self.assertIn('notificationActionBusyRef', PAGE)
+        self.assertIn('disabled={actionKey !== null}', PAGE)
         self.assertIn('.notificationMenu', CSS)
 
     def test_06_undo_exists(self):

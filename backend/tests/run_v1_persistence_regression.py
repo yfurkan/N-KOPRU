@@ -28,7 +28,7 @@ class V1PersistenceRegression(unittest.TestCase):
 
     def test_01_health_declares_sqlite(self):
         data = self.client.get('/health').json()
-        self.assertEqual(data['version'], '1.4.0')
+        self.assertEqual(data['version'], '1.5.0')
         self.assertEqual(data['storage'], 'sqlite')
 
     def test_02_profile_is_real_and_starts_from_data(self):

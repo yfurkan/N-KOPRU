@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">N-KÖPRÜ v1.5.0 teknik mimarisi</title>
+  <desc id="desc">Yerel Next.js arayüzünün FastAPI analiz orkestratörüne, SQLite kalıcılığına ve isteğe bağlı yerel modellere bağlandığını gösteren mimari çizim.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#10223b"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e6da4"/>
+      <stop offset="1" stop-color="#3150a4"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6c59c8"/>
+      <stop offset="1" stop-color="#8b67dc"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#236b63"/>
+      <stop offset="1" stop-color="#2f9671"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity=".28"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8fb5da"/>
+    </marker>
+    <style>
+      .title { font: 800 28px Arial, sans-serif; fill: #f5f8ff; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #a7bad0; }
+      .boxTitle { font: 800 17px Arial, sans-serif; fill: #ffffff; }
+      .boxText { font: 400 12px Arial, sans-serif; fill: #d7e4f2; }
+      .small { font: 700 11px Arial, sans-serif; fill: #b9cde2; }
+      .line { stroke: #8fb5da; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .soft { stroke: #334e70; stroke-width: 1.2; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" rx="24" fill="url(#bg)"/>
+  <text x="60" y="58" class="title">N-KÖPRÜ v1.5.0 · yerel finalist kaynak teslimi</text>
+  <text x="60" y="84" class="subtitle">Aynı tartışma bağlamı üzerinde açıklanabilir analiz, güvenli yanıt ve tekrarlanabilir jüri demosu</text>
+
+  <rect x="60" y="120" width="1080" height="92" rx="18" fill="url(#blue)" filter="url(#shadow)"/>
+  <text x="88" y="153" class="boxTitle">Next.js 15.5.25 + React 19 + TypeScript</text>
+  <text x="88" y="178" class="boxText">Ana sayfa · 8 analiz sekmesi · Sunum Modu · Yanıt Koçu · Kontrollü Senaryo · erişilebilir ve mobil arayüz</text>
+  <rect x="875" y="143" width="228" height="42" rx="12" fill="#17345a" stroke="#83b5ef"/>
+  <text x="989" y="169" text-anchor="middle" class="small">Tarayıcıdan yerel kullanım</text>
+
+  <path d="M600 212 L600 256" class="line"/>
+  <rect x="60" y="258" width="1080" height="98" rx="18" fill="url(#violet)" filter="url(#shadow)"/>
+  <text x="88" y="292" class="boxTitle">FastAPI + Pydantic + Uvicorn</text>
+  <text x="88" y="317" class="boxText">Sağlık ve readiness · tartışma/yorum API’leri · analiz geçmişi · mesajlar · yer imleri · yerel CORS sınırı</text>
+  <rect x="855" y="280" width="248" height="47" rx="12" fill="#332b68" stroke="#c4b8ff"/>
+  <text x="979" y="301" text-anchor="middle" class="small">/health · /api/system/readiness</text>
+  <text x="979" y="318" text-anchor="middle" class="small">v1.5.0 · zorunlu hazırlık 5/5</text>
+
+  <path d="M600 356 L600 404" class="line"/>
+  <rect x="250" y="406" width="700" height="106" rx="18" fill="#1a2e46" stroke="#88b0d8" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="600" y="442" text-anchor="middle" class="boxTitle">N-KÖPRÜ hibrit analiz orkestratörü</text>
+  <text x="600" y="468" text-anchor="middle" class="boxText">Konu bağlamı → yapılandırılmış sinyaller → tutarlı çıktı sözleşmesi</text>
+  <text x="600" y="490" text-anchor="middle" class="small">Özet · Ortak Zemin · Görüş Haritası · İddia Radarı · Cevapsız Sorular · Köprü</text>
+
+  <path d="M250 458 L170 458 L170 570" class="line"/>
+  <path d="M950 458 L1030 458 L1030 570" class="line"/>
+  <path d="M600 512 L600 570" class="line"/>
+
+  <rect x="60" y="572" width="300" height="98" rx="16" fill="#173d51" stroke="#5ea8cb" class="soft"/>
+  <text x="210" y="605" text-anchor="middle" class="boxTitle">Türkçe yapısal sinyaller</text>
+  <text x="210" y="630" text-anchor="middle" class="boxText">Görüş, iddia, soru, ironi</text>
+  <text x="210" y="650" text-anchor="middle" class="boxText">ve kaynak ihtiyacını açıklar.</text>
+
+  <rect x="450" y="572" width="300" height="98" rx="16" fill="#3a2e61" stroke="#a895eb" class="soft"/>
+  <text x="600" y="605" text-anchor="middle" class="boxTitle">İsteğe bağlı yerel modeller</text>
+  <text x="600" y="630" text-anchor="middle" class="boxText">mDeBERTa-XNLI: görüş/iddia</text>
+  <text x="600" y="650" text-anchor="middle" class="boxText">Qwen: Yanıt Koçu adayı</text>
+
+  <rect x="840" y="572" width="300" height="98" rx="16" fill="url(#green)" stroke="#78d5ae" class="soft"/>
+  <text x="990" y="605" text-anchor="middle" class="boxTitle">SQLite + yerel çalışma alanı</text>
+  <text x="990" y="630" text-anchor="middle" class="boxText">Tartışma · snapshot · geçmiş</text>
+  <text x="990" y="650" text-anchor="middle" class="boxText">mesaj · bildirim · liste · yer imi</text>
+
+  <rect x="60" y="704" width="1080" height="32" rx="10" fill="#0b1828" stroke="#2c4968"/>
+  <text x="600" y="725" text-anchor="middle" class="small">Sabit demo · 1.240 otomatik test · dış platform bağlantısı yok · gerçek kullanıcı metriği üretilmez</text>
+</svg>

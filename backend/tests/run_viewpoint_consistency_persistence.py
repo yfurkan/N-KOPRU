@@ -25,7 +25,7 @@ class ViewpointConsistencyPersistence(unittest.TestCase):
 
     def test_01_health_reports_v123_and_sqlite(self):
         self.assertEqual(self.client.get('/health').json(), {
-            'status': 'ok', 'project': 'N-KÖPRÜ', 'version': '1.4.0', 'storage': 'sqlite',
+            'status': 'ok', 'project': 'N-KÖPRÜ', 'version': '1.5.0', 'storage': 'sqlite',
         })
 
     def test_02_demo_api_places_personal_usage_in_controlled_cluster(self):
