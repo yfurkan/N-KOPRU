@@ -2,8 +2,8 @@ N-KÖPRÜ v1.5.0 — YANIT KOÇU BİLEŞENİ FİNAL TEST RAPORU
 Tarih: 18 Eylül 2026
 
 SONUÇ
-- Regresyon test grubu: 35 / 35 başarılı
-- Toplam senaryo kontrolü: 576
+- Regresyon test grubu: 41 / 41 başarılı
+- Toplam senaryo kontrolü: 738
 - Hata: 0
 - API sözleşme testi: başarılı
 - Backend Python py_compile/compileall: başarılı
@@ -26,6 +26,14 @@ v1.5.0 KAYNAĞINDA DOĞRULANAN KRİTİK DÜZELTMELER
 9. Aynı saldırı ailesi için deterministik, güvenli ifade çeşitliliği eklendi;
    aynı kalıp her girişte tek cevaba kilitlenmiyor.
 
+10. Kullanıcı ekranında görülen iki açık hata birebir regresyona alındı:
+    "Senden hiç bir sikim olmaz..." ve "yarrak kafalı sikilne..." artık
+    nötr/preserve-safe dönmüyor; saldırı sinyali alıp güvenli biçimde
+    yeniden yazılıyor.
+11. Saldırı sinyali bulunan hiçbir istek isteğe bağlı Qwen/Hugging Face
+    üretim yoluna gönderilmiyor. HF_TOKEN, ağ erişimi veya model indirmesi
+    saldırı temizliğinin ön koşulu değil.
+
 REGRESYON KAPSAMI
 - Önceki v0.4.3 testlerinin tamamı
 - 96 saldırı × içerik güvenlik matrisi
@@ -39,13 +47,18 @@ REGRESYON KAPSAMI
 - Kötü üretken adayın reddi ve güvenli adayın kabulü
 - Yüksek güvenli hızlı yolun üretken modeli çağırmaması
 - Kişisel küçümseme, gizlenmiş saldırı, tehdit ve cevap çeşitliliği regresyonları
+- 96 farklı saldırı çekirdeği; cinsel/bedensel argo, ailevi küfür,
+  dehümanize edici hitap, kovma, tehdit, sembol, İngilizce karışımı ve yazım
+  bozulmaları
+- Kullanıcı tarafından bildirilen iki ekran örneği için birebir regresyon
+- 12 kırıcı ama doğrudan küfür içermeyen ifade ve 12 nesnel bağlam yanlış-pozitif testi
 
 PERFORMANS BENCHMARKI
 - 10 kritik örnek × 100 tur = 1000 çağrı
-- Ortalama: 0.366 ms
-- Medyan: 0.340 ms
-- P95: 0.587 ms
-- Maksimum: 3.940 ms
+- Ortalama: 5.514 ms
+- Medyan: 4.316 ms
+- P95: 12.459 ms
+- Maksimum: 27.352 ms
 
 Bu değerler test çalışma ortamına aittir; kullanıcının bilgisayarında farklı olabilir. Yüksek güvenli durumlar üretken modeli beklemediği için bu dallar milisaniye seviyesinde tamamlanır.
 

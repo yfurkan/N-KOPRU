@@ -19,7 +19,7 @@ sürümü v1.5.0’dır. Eski sürüm kayıtları yalnızca geçmişi izlemek i�
 |---|---:|
 | Güncel uygulama sürümü | **v1.5.0** |
 | Çalışan analiz modülü | **8** |
-| Backend otomatik testi | **1.246 / 1.246** |
+| Backend otomatik testi | **1.252 / 1.252** |
 | Zorunlu hazırlık kontrolü | **5 / 5** |
 | Frontend üretim derlemesi | **Başarılı** |
 | Production bağımlılık denetimi | **0 açık** |
@@ -85,10 +85,20 @@ Yanıt Koçu iki katmanlıdır:
 
 1. Yüksek güvenli Türkçe yapısal sinyaller; hakaret, kişisel saldırı, kaynak
    talebi, ironi, dengeli görüş, soru ve sayısal iddia gibi durumları hızlıca
-   ayırır.
+   ayırır. Hakaret katmanı doğrudan küfürle sınırlı değildir; birleşik argo,
+   aile/cinsel saldırı, kişiyi küçümseme, dehümanize edici benzetme, kovma,
+   tehdit ve sert suçlama kalıplarını; Türkçe ASCII, noktalı, boşluklu, leet,
+   harf uzatmalı ve bitişik yazımlarıyla birlikte kontrol eder.
 2. Belirsiz durumlarda isteğe bağlı, yerel Qwen üretimi aday olarak denenir.
    Aday; saldırı, prompt sızıntısı, ana görüş kaybı, sayı/link kaybı ve
    uygunsuz uzunluk kontrollerinden geçmeden kullanıcıya verilmez.
+
+Saldırı sinyali bulunduğunda Qwen/Hugging Face yolu çağrılmaz; güvenli
+deterministik yeniden yazım kullanılır. Böylece Yanıt Koçu’nun jüri mesajını
+"yapıcı" sanıp aynen bırakması, model indirme/ağ erişimi veya HF tokenı
+gerektirmesi mümkün değildir. Temiz mesajlar gereksiz yere değiştirilmez;
+nesnel kullanımlar (ör. "mal varlığı", "hayvan davranışları", "Sikorsky")
+bağlam kontrolünden geçer.
 
 Görüş ve iddia analizi için `mDeBERTa-XNLI` isteğe bağlı ikinci katmandır.
 Qwen yalnızca Yanıt Koçu üretim adayı içindir; iki model zorunlu değildir ve
@@ -233,7 +243,7 @@ npx tsc --noEmit
 npm audit --omit=dev --audit-level=high
 ```
 
-Bu teslimde doğrulanan backend sonucu `1.246 / 1.246`’dır. Testler geçici
+Bu teslimde doğrulanan backend sonucu `1.252 / 1.252`’dır. Testler geçici
 SQLite yolu kullanılacak şekilde çalıştırılmak istenirse `N_KOPRU_DB_PATH`
 ortam değişkeni açık bir dosya yoluna ayarlanabilir. Testler ve jüri demosu
 gerçek kullanıcı verisi gerektirmez.
@@ -291,7 +301,7 @@ N-KOPRU/
 Teknik rapordaki 98/100 puan ve raporun v1.4.0 temelindeki 80 elle
 etiketlenmiş örnekten 74/80, %92,5 Macro-F1 sonucu geçmiş teslim kanıtıdır.
 Bu sayı v1.5.0 için gerçek kullanıcı başarısı değildir. v1.5.0’da gösterilen
-1.246 otomatik test; kod, API, kalıcılık ve arayüz sözleşmelerinin geçtiğini
+1.252 otomatik test; kod, API, kalıcılık ve arayüz sözleşmelerinin geçtiğini
 gösterir, kullanıcı etkisini ölçmez. Kaynak kodu bu ayrımı arayüzde ve
 raporlarda korur.
 

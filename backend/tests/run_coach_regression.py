@@ -16,6 +16,7 @@ from app.coach_engine import (  # noqa: E402
     DIRECT_ATTACK_PATTERNS,
     OFFENSIVE_PATTERNS,
     _candidate_valid,
+    _has_attack_residue,
     _has_any,
     _normalize,
     _numbers,
@@ -25,6 +26,63 @@ from app.coach_engine import (  # noqa: E402
 )
 
 CTX = 'Üniversitelerde yapay zekâ kullanımı yasaklanmalı mı?'
+
+REPORTED_SCREEN_CASES = [
+    'Senden hiç bir sikim olmaz anlamıyorsun hiç bir şey',
+    'yarrak kafalı sikilne düşünüp buraya gelip bir şeyler yazıyorsun anca',
+]
+
+# Sözlükte tek bir kelimeye bağlı kalmadan; cinsel/bedensel argo, aileye yönelen
+# küfür, küçümseme, kovma, sembol, İngilizce karışımı, harf aralığı, leet,
+# uzatılmış harf ve bitişik yazım varyantları birlikte sınanır.
+ADVERSARIAL_ATTACK_CASES = [
+    'mal', 'öküz.', 'sikim', 'sikim olmaz', 'sik kafalı', 'sik kafali', 'sikik', 'siktir git',
+    'sikerim seni', 'sikeyim seni', 'siktim seni', 'sikilne', 'sikiline',
+    'sikilmiş', 's1k1m', 's.i.k.i.m', 's i k i m', 'siiikim', 's1kt1r g1t',
+    's1k1r g1t', 'yarak', 'yarrak', 'yarak kafalı', 'yarrak kafalı',
+    'yarrakkafali', 'y.a.r.r.a.k kafalı', 'y a r r a k k a f a l i', 'yaaarrrak',
+    'amk', 'a.m.k', 'aq', 'a q', 'amına koyayım', 'amina koyim', 'orospu çocuğu',
+    'orospucocugu', 'piç', 'pic', 'ibne', 'kahpe', 'sürtük', 'göt', 'götveren',
+    'göt herif', 'boktan', 'bok kafalı', 'bok gibi', 'bok yığını', 'pezevenk',
+    'aptal', 'salak', 'gerizekalı', 'mal beyinli', 'yavşak', 'beyinsiz', 'ahmak',
+    'hıyar', 'şerefsiz', 'namussuz', 'haysiyetsiz', 'ahlaksız', 'rezilsin',
+    'karaktersiz', 'omurgasız', 'sahtekarsın', 'beceriksiz', 'eziksin', 'kafasız',
+    'kafasiz', 'sözde uzmansın', 'sen kimsin', 'senden hiçbir şey olmaz',
+    'hiç bir şey anlamıyorsun', 'hiç bir şey bilmiyorsun', 'hiçbir işe yaramıyorsun',
+    'beş para etmiyorsun', 'bir gram aklın yok', 'düşünmeden yazıyorsun anca',
+    'boş yapıyorsun', 'zırvalıyorsun', 'çeneni kapat', 'haddini bil', 'defol buradan',
+    'kaybol', 'yalan söylüyorsun', 'uyduruyorsun', 'sen hayvansın', 'hayvan herif',
+    'sana ne', '🤡', 'you suck', 'fuck you', 'piece of shit', 'shut up',
+    'öl de kurtulalım', 'seni mahvederim',
+]
+
+MIXED_ATTACK_CASES = [
+    'Yarrak kafalı, bu fikir kötü ve uygulanabilir değil.',
+    'S1K1R G1T, bu verinin kaynağı nedir?',
+    's.i.k.i.m, tamamen yasaklamak yanlış ama sınavlarda kullanım kısıtlanmalı.',
+    "Senden hiç bir sikim olmaz, öğrencilerin %70'i bunu kullandı.",
+    'Aptal mısın, bu %70 oranı hangi rapora dayanıyor?',
+    'Yalan söylüyorsun, kaynaklarınla gel.',
+    'Sen işe yaramazsın ama bu yöntem pahalı ve uygulanabilir değil.',
+    'Sen hayvansın; yapay zekâ kesinlikle yasaklanmalı.',
+    'Sana ne, bu konuda kaynak var mı?',
+]
+
+HURTFUL_NON_PROFANE_CASES = [
+    'Rezilsin.', 'Karaktersizsin.', 'Omurgasızsın.', 'Beceriksizsin.',
+    'Kafasızsın.', 'Sen tam bir palyaçosun.', 'Sen bir hayvansın.',
+    'Beş para etmezsin.', 'İşe yaramazsın.', 'Bir gram aklın yok.',
+    'Kendini bir şey sanıyorsun.', 'Sana ne?',
+]
+
+FALSE_POSITIVE_CASES = [
+    'Sıkışık bir programımız var.', 'Sikke koleksiyonu yapıyorum.',
+    'Yarın okula götürmek istiyorum.', 'Bok böceği üzerine araştırma yapıyorum.',
+    'Mal varlığı beyanı gerekiyor.', 'Hayvan davranışlarını inceliyoruz.',
+    'Bu yöntem işe yaramaz.', 'Çöp kutusunu değiştirelim.',
+    'Sikorsky helikopteri hakkında bilgi ver.', 'I got an idea.',
+    'This class is useful.', 'Bütün sorunları çözmek mümkün değildir.',
+]
 
 
 class CoachRegression(unittest.TestCase):
@@ -392,10 +450,13 @@ class CoachRegression(unittest.TestCase):
         original_fast = ce.USE_FAST_PATH
         try:
             ce.USE_FAST_PATH = True
-            ce._generate_candidate = lambda text, context, signals: ('Bu fikir kötü ve uygulanabilir görünmüyor.', 'ok')
-            result = ce.rewrite_with_ai('Aptal, bu fikir kötü', context=CTX, use_ai=True)
+            ce._generate_candidate = lambda text, context, signals: (
+                'Bu yaklaşımın gerçekten etkili olduğundan emin değilim. Gerekçelerini daha açık tartışmayı tercih ederim.',
+                'ok',
+            )
+            result = ce.rewrite_with_ai('Güya bu yaklaşım çok etkili.', context=CTX, use_ai=True)
             self.assertEqual(result['engine'], 'qwen-generative')
-            self.assertEqual(result['suggestion'], 'Bu fikir kötü ve uygulanabilir görünmüyor.')
+            self.assertEqual(result['suggestion'], 'Bu yaklaşımın gerçekten etkili olduğundan emin değilim. Gerekçelerini daha açık tartışmayı tercih ederim.')
             self.assert_safe(result['suggestion'])
         finally:
             ce._generate_candidate = original_generator
@@ -623,7 +684,10 @@ class CoachRegression(unittest.TestCase):
         for original in cases:
             with self.subTest(original=original):
                 signals = analyze_message(original)
-                self.assertIn('kişiye yönelik saldırı', signals)
+                self.assertTrue(
+                    any(signal in signals for signal in ('hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet')),
+                    msg=f'{original!r} -> {signals}',
+                )
                 result = self.rewrite(original)
                 self.assertNotEqual(result['engine'], 'preserve-safe')
                 self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
@@ -676,6 +740,101 @@ class CoachRegression(unittest.TestCase):
             self.assert_safe(suggestion)
         self.assertGreaterEqual(len(set(suggestions)), 3)
 
+    def test_36_reported_screen_examples_are_not_neutral_or_preserved(self):
+        for original in REPORTED_SCREEN_CASES:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertIn('hakaret/küfür', signals)
+                self.assertIn('kişiye yönelik saldırı', signals)
+                self.assertNotEqual(signals, ['nötr/bağlamsal ifade'])
+
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(_normalize(result['suggestion']), _normalize(original))
+                self.assert_safe(result['suggestion'])
+                self.assertFalse(_has_attack_residue(result['suggestion']), result['suggestion'])
+
+    def test_37_adversarial_attack_families_never_echo_or_fallback_to_neutral(self):
+        for original in ADVERSARIAL_ATTACK_CASES:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertNotEqual(signals, ['nötr/bağlamsal ifade'])
+                self.assertTrue(
+                    any(signal in signals for signal in ('hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet')),
+                    msg=f'{original!r} -> {signals}',
+                )
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(_normalize(result['suggestion']), _normalize(original))
+                self.assert_safe(result['suggestion'])
+                self.assertFalse(_has_attack_residue(result['suggestion']), result['suggestion'])
+
+    def test_38_mixed_attacks_preserve_content_without_preserving_abuse(self):
+        for original in MIXED_ATTACK_CASES:
+            with self.subTest(original=original):
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assert_safe(result['suggestion'])
+                self.assertFalse(_has_attack_residue(result['suggestion']), result['suggestion'])
+
+        number_case = self.rewrite(MIXED_ATTACK_CASES[3])
+        self.assertIn("%70", number_case['suggestion'])
+
+        question_case = self.rewrite(MIXED_ATTACK_CASES[1])
+        self.assertIn('?', question_case['suggestion'])
+
+        stance_case = self.rewrite(MIXED_ATTACK_CASES[2])
+        self.assertIn('sınavlarda', stance_case['suggestion'].casefold())
+        self.assertIn('tamamen yasaklamanın doğru olmadığını', stance_case['suggestion'].casefold())
+
+        source_case = self.rewrite(MIXED_ATTACK_CASES[5])
+        self.assertIn('kaynak', source_case['suggestion'].casefold())
+
+    def test_39_hurtful_non_profanity_is_still_coached(self):
+        for original in HURTFUL_NON_PROFANE_CASES:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertTrue(
+                    any(signal in signals for signal in ('hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet')),
+                    msg=f'{original!r} -> {signals}',
+                )
+                result = self.rewrite(original)
+                self.assertNotEqual(result['engine'], 'preserve-safe')
+                self.assertNotEqual(_normalize(result['suggestion']), _normalize(original))
+                self.assert_safe(result['suggestion'])
+
+    def test_40_false_positive_lexical_context_is_preserved(self):
+        for original in FALSE_POSITIVE_CASES:
+            with self.subTest(original=original):
+                signals = analyze_message(original)
+                self.assertNotIn('hakaret/küfür', signals)
+                self.assertNotIn('kişiye yönelik saldırı', signals)
+                self.assertNotIn('tehdit/şiddet', signals)
+                result = self.rewrite(original)
+                self.assertEqual(result['suggestion'], original)
+                self.assertEqual(result['engine'], 'preserve-safe')
+
+    def test_41_attack_cleanup_never_depends_on_optional_model(self):
+        import app.coach_engine as ce
+
+        original_generator = ce._generate_candidate
+        original_fast = ce.USE_FAST_PATH
+        try:
+            ce.USE_FAST_PATH = True
+
+            def fail_if_called(*args, **kwargs):
+                raise AssertionError('Saldırı temizliği isteğe bağlı üretken modele bağlı olmamalı')
+
+            ce._generate_candidate = fail_if_called
+            for original in REPORTED_SCREEN_CASES + ADVERSARIAL_ATTACK_CASES[:25]:
+                with self.subTest(original=original):
+                    result = ce.rewrite_with_ai(original, context=CTX, use_ai=True)
+                    self.assertNotEqual(result['engine'], 'preserve-safe')
+                    self.assert_safe(result['suggestion'])
+        finally:
+            ce._generate_candidate = original_generator
+            ce.USE_FAST_PATH = original_fast
+
 
 
 def main() -> int:
@@ -699,7 +858,15 @@ def main() -> int:
         'obfuscated_attack_cases': 2,
         'threat_cases': 3,
         'response_variety_cases': 7,
-        'total_scenario_checks': 576,
+        'reported_screen_cases': len(REPORTED_SCREEN_CASES),
+        'adversarial_attack_cases': len(ADVERSARIAL_ATTACK_CASES),
+        'mixed_attack_cases': len(MIXED_ATTACK_CASES) + 4,
+        'hurtful_non_profanity_cases': len(HURTFUL_NON_PROFANE_CASES),
+        'false_positive_cases': len(FALSE_POSITIVE_CASES),
+        'model_independent_attack_cases': len(REPORTED_SCREEN_CASES) + 25,
+        'total_scenario_checks': 576 + len(REPORTED_SCREEN_CASES) + len(ADVERSARIAL_ATTACK_CASES)
+        + len(MIXED_ATTACK_CASES) + 4 + len(HURTFUL_NON_PROFANE_CASES) + len(FALSE_POSITIVE_CASES)
+        + len(REPORTED_SCREEN_CASES) + 25,
     }
     print('\nSUMMARY:', json.dumps(summary, ensure_ascii=False))
     return 0 if result.wasSuccessful() else 1

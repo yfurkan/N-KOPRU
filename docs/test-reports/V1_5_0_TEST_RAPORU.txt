@@ -13,15 +13,16 @@ python -m unittest discover -s tests -p "run_*.py" -v
 
 Sonuç:
 - 54 test paketi
-- 1.246 / 1.246 başarılı
+- 1.252 / 1.252 başarılı
 - Hata: 0
 
 Kapsam:
 - analiz, konu bağlamı, görüş/iddia/soru tutarlılığı ve SQLite kalıcılığı
 - Sunum Modu readiness ve v1.5.0 arayüz sözleşmeleri
-- Yanıt Koçu güvenlik, anlam koruma, ironi, koşullu görüş, sayı ve kaynak
-  talebi regresyonları; kişisel küçümseme, gizlenmiş saldırı, tehdit ve cevap
-  çeşitliliği kontrolleri
+- Yanıt Koçu: 41/41 regresyon testi ve 738 senaryo kontrolü; güvenlik, anlam
+  koruma, ironi, koşullu görüş, sayı ve kaynak talebi regresyonları; kişisel
+  küçümseme, gizlenmiş saldırı, tehdit, bozuk yazım, iki ekran örneği,
+  nesnel bağlam yanlış-pozitifleri ve cevap çeşitliliği kontrolleri
 - sabit kontrollü demo senaryosu, iki faz, sıra ve idempotency
 - gerçek kullanıcı modunun reddedilmesi, gerçek metrik ve CSV yolunun kapalı
   kalması

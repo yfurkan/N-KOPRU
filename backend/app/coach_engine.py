@@ -31,6 +31,8 @@ USE_FAST_PATH = os.getenv('N_KOPRU_COACH_FAST_PATH', '1').strip().lower() not in
 IRONY_PATTERNS = [
     r'\bgüya\b',
     r'\bsanki\b.{0,100}\b(?:tek\s+çözüm|bütün\s+sorun|tüm\s+sorun|her\s+şey\s+çöz)\w*\b',
+    r'\b(?:bravo|aferin|helal)\b.{0,60}\b(?:zekisin|dahisin|uzmansın|uzmansin|harikasın|harikasin|mükemmelsin|mukemmelsin)\b',
+    r'\b(?:ne\s+kadar|çok)\s+(?:zekisin|dahisin|uzmansın|uzmansin)\b',
 ]
 
 BALANCE_CONTEXT_MARKERS = (
@@ -43,59 +45,171 @@ _TOKENIZER = None
 _DEVICE = 'cpu'
 _LOAD_ERROR: str | None = None
 
-# Kişiye yöneltilen hakaret/küfür çekirdeği. Regexler Türkçe ek almış biçimleri de yakalar.
+# Kişiye yöneltilen hakaret/küfür çekirdeği. Bu liste tek başına bir "küfür
+# sözlüğü" gibi kullanılmaz; doğrudan sözcükleri, birleşik kalıpları ve sık
+# görülen yazım varyantlarını güvenli yeniden yazım kapısına taşır. Liste; Türkçe
+# sosyal medya çalışmalarında kullanılan "profanity / individual-targeted /
+# group-targeted" ayrımını uygulama içindeki jüri yanıtı bağlamına uyarlar.
 OFFENSIVE_PATTERNS = [
-    r'\bmal\s*beyinli\w*\b', r'\byavşak\w*\b', r'\bgerizek[aâ]l[ıi]\w*\b', r'\bgeri\s*zek[aâ]l[ıi]\w*\b',
-    r'\baptal\w*\b', r'\bsalak\w*\b', r'\bbeyinsiz\w*\b', r'\bahmak\w*\b', r'\bembesil\w*\b',
-    r'\bdangalak\w*\b', r'\bşerefsiz\w*\b', r'\bmoron\w*\b', r'\bpezevenk\w*\b',
-    r'\bsiktir\w*\b', r'\bsikerim\b', r'\bsikeyim\b', r'\bsiktim\b', r'\borospu\w*\b', r'\bpiç\w*\b', r'\bamk\b', r'\baq\b',
-    r'\bgötünden\w*\b', r'\bgöt(?:ün|ünü|üne|ünden|ü|e|ten)?\b', r'\bmal\s+m[ıi]s[ıi]n\b', r'\bmal(?:sın|sin)\b', r'\bcahil\w*\b', r'\bzeka\s*özürlü\w*\b', r'\bzek[aâ]\s*özürlü\w*\b',
-    r'\bbok(?:tan|luk)?\b', r'\bterbiyesiz\w*\b', r'\byalanc[ıi]\w*\b', r'\bhıyar\w*\b', r'\böküz\w*\b', r'\bşapşal\w*\b',
+    # Kişiyi doğrudan niteleyen hakaretler.
+    r'\bmal\s*beyinli\w*\b', r'\bmal\s*kafal[ıi]\w*\b', r'\byavşak\w*\b',
+    r'\bgerizek[aâ]l[ıi]\w*\b', r'\bgeri\s*zek[aâ]l[ıi]\w*\b',
+    r'\b(?:mal|aptal|salak|gerizek[aâ]l[ıi]|ahmak)\s+m[ıi]s[ıi]n\b',
+    r'\baptal\w*\b', r'\bsalak\w*\b', r'\bbeyinsiz\w*\b', r'\bahmak\w*\b',
+    r'\bembesil\w*\b', r'\bdangalak\w*\b', r'\bşerefsiz\w*\b', r'\bserefsiz\w*\b',
+    r'\bmoron\w*\b', r'\bpezevenk\w*\b', r'\bcahil\w*\b', r'\bzeka\s*özürlü\w*\b',
+    r'\bzek[aâ]\s*özürlü\w*\b', r'\bterbiyesiz\w*\b', r'\byalanc[ıi]\w*\b',
+    r'\bhıyar\w*\b', r'\bşapşal\w*\b', r'\bnamussuz\w*\b', r'\bhaysiyetsiz\w*\b',
+    r'\bahlaksız\w*\b', r'\bahlaksiz\w*\b', r'\bonursuz\w*\b', r'\balçak\w*\b',
+    r'\balcak\w*\b', r'\başağılık\w*\b', r'\basagilik\w*\b', r'\biğrençsin\w*\b',
+    r'\bigrencsin\w*\b', r'\bkaraktersiz\w*\b', r'\bomurgasız\w*\b', r'\bomurgasiz\w*\b',
+    r'\bşarlatan\w*\b', r'\bsahtek[aâ]r\w*\b', r'\bucuzsun\w*\b',
+    r'\bezik\w*\b', r'\bbeceriksiz\w*\b', r'\bvasıfsız\w*\b', r'\bvasifsiz\w*\b',
+    r'\bçapsız\w*\b', r'\bcapsiz\w*\b', r'\bhödük\w*\b', r'\bhoduk\w*\b',
+    r'\bdümbük\w*\b', r'\bdumbuk\w*\b', r'\bküstah\w*\b', r'\bkustah\w*\b', r'\bukala\w*\b',
+
+    # Cinsel/bedensel argo ve küfür çekirdekleri. Sınırları özellikle açık
+    # tutulur; "sık..." gibi masum kelimeler dotless ı nedeniyle yanlışlıkla
+    # bu sınıfa alınmaz.
+    r'\bsik\b', r'\bsikim\w*\b', r'\bsikin\w*\b', r'\bsikik\w*\b',
+    r'\bsiktir\w*\b', r'\bsiker(?:im|sin|iz|ler|ek|ken)?\w*\b', r'\bsikir\w*\b',
+    r'\bsikey(?:im|in|sin|iz)?\w*\b', r'\bsikt(?:im|in|i|irdi|irmiş|irmis)?\w*\b',
+    r'\bsikil\w*\b', r'\byarak\w*\b', r'\byarrak\w*\b',
+    r'\bamk\b', r'\baq\b', r'\boç\w*\b', r'\boc\b', r'\bamc(?:ık|ik|uk)\w*\b',
+    r'\bamına\w*\b', r'\bamina\w*\b', r'\borospu\w*\b', r'\bpiç\w*\b', r'\bpic\w*\b',
+    r'\bsürtük\w*\b', r'\bsurtuk\w*\b', r'\bfahişe\w*\b', r'\bfahise\w*\b',
+    r'\bibne\w*\b', r'\bkahpe\w*\b', r'\bpezevenk\w*\b',
+    r'\bgötünden\w*\b', r'\bgöt(?:ün|ünü|üne|ünden|ü|e|ten)?\b',
+    r'\bgot(?:veren|lek|herif)\w*\b',
+    r'\bbok(?!(?:\s+böceğ|\s+boceg))(?:tan|luk|gibi|parçası|parcasi)?\b',
+    r'\bterbiyesiz\w*\b',
+
+    # İngilizce karışık yazımlarda da aynı koruma uygulanır; normal kelimeler
+    # (ör. "class", "assist") için sınır kullanılır.
+    r'\bfuck\w*\b', r'\bshit\w*\b', r'\basshole\w*\b', r'\bbitch\w*\b',
+    r'\bbastard\w*\b', r'\bjerk\w*\b', r'\bidiot\w*\b', r'\bstupid\w*\b',
+    r'\bdumb\w*\b', r'\bloser\w*\b',
+
+    # Birleşik/kalıplaşmış saldırılar. \s*; boşluk, bitişik yazım ve noktalı
+    # yazımın tespit biçimlerini kapsar.
+    r'\b(?:sik|sikim|yarak|yarrak|mal|bok)\s*kafal[ıi]\w*\b',
+    r'\b(?:sik|sikim|yarak|yarrak|mal|bok)\s*herif\w*\b',
+    r'\b(?:göt|got)\s*(?:veren|lek|lalesi|herif)\w*\b',
+    r'\borospu\s*çocuğ\w*\b', r'\borospu\s*cocuğ\w*\b', r'\borospucocuğ\w*\b',
+    r'\borospucocug\w*\b', r'\b(?:oç|oc)\s*ocuğ\w*\b', r'\b(?:oç|oc)\s*çocuğ\w*\b',
+    r'\b(?:ananı|anani|anneni|bacını|bacini|kızını|kizini|sülaleni|sulaleni)\b',
+    r'\b(?:amına|amina|amını|amini)\s*(?:koyayım|koyayim|koyim|koyarım|koyarim)\b',
+    r'\b(?:seni|sana)\s*(?:sikerim|sikeyim|siktiririm)\b',
+    r'\b(?:piece\s+of\s+shit|shut\s+up|go\s+to\s+hell|you\s+suck)\b',
+]
+
+# Küfür içermeden de hedef kişiyi aşağılayan kalıplar. Bunlar hakaret sinyaline
+# eklenir; çünkü Yanıt Koçu'nun görevi yalnızca argo sansürlemek değil, kişisel
+# saldırıyı tartışılabilir içeriğe çevirmektir.
+HURTFUL_PERSONAL_PATTERNS = [
+    r'\b(?:sen|siz)\b.{0,30}\b(?:işe|ise)\s+yaramaz\w*\b',
+    r'\b(?:işe|ise)\s+yaramazs[ıi]n\w*\b',
+    r'\b(?:hiç|hiçbir|hiç\s*bir)\s+işe\s+yaramazs[ıi]n\w*\b',
+    r'\b(?:sen|siz)\b.{0,30}\bbeş\s+para\s+etmez\w*\b',
+    r'\b(?:sen|siz)\b.{0,30}\bbes\s+para\s+etmez\w*\b',
+    r'\bdeğersizsin\w*\b', r'\bdegersizsin\w*\b', r'\butanmaz(?:s[ıi]n|siniz|sınız)?\b',
+    r'\binsan\s+değilsin\w*\b', r'\binsan\s+degilsin\w*\b', r'\bmide\s+bulandırıyorsun\w*\b',
+    r'\bmide\s+bulandiriyorsun\w*\b', r'\b(?:rezilsin|rezilsiniz|rezil\s+birisin|rezil\s+herif)\b',
+    r'\b(?:çöpsün|cöpsun|çöp\s+herif|cop\s+herif)\b',
+    r'\b(?:sıfır|sifir)\s+(?:beyin|zeka)\w*\b', r'\bbir\s+gram\s+(?:aklın|aklin)\s+yok\b',
+    r'\bakıl\s+fukarası\w*\b', r'\bakil\s+fukarasi\w*\b', r'\bbeyin\s+yok\w*\b',
+    r'\bzeka\s+yok\w*\b', r'\bkafas[ıi]z\w*\b', r'\b(?:sözde|sozde)\s+(?:uzman|bilirkişi|bilir kisi)\w*\b',
+    r'\bkendini\s+bir\s+şey\s+sanıyorsun\w*\b', r'\bkendini\s+bir\s+sey\s+saniyorsun\w*\b',
+    r'\bsen\s+kimsin\b', r'\bde\s+sen\s+kimsin\b',
+]
+
+# İnsan dışı varlık benzetmeleri, sınıf/kimlik hedefleyen aşağılamalar ve
+# sembolik hakaretler; yalnızca kişiye/gruba yöneldiği açık olduğunda işaretlenir.
+# Böylece "hayvan davranışlarını inceleyen" gibi bilimsel ifadeler korunur.
+DEHUMANIZING_ATTACK_PATTERNS = [
+    r'\b(?:sen|siz)\s+(?:(?:tam\s+)?bir\s+)?(?:hayvan|eşek|esek|sığır|sigir|öküz|okuz|köpek|kopek|davar|it|haşere|hasere|sürüngen|surungen|palyaço|clown)(?=\s*(?:s[ıiuü]n|siniz|sınız|sunuz|sünüz|herif|adam|gibi|[.!?,]|$))',
+    r'\b(?:hayvan|eşek|esek|sığır|sigir|öküz|okuz|köpek|kopek|davar|it|haşere|hasere|sürüngen|surungen|palyaço|clown)\s+(?:herif|adam|gibi)\b',
+    r'\b(?:bunlar|şunlar|sunlar|onlar)\s+(?:hayvan|haşere|hasere|sürüngen|surungen|köpek|kopek)\w*\b',
+    r'[🤡💩🖕]',
+]
+
+# Tek başına hakaret olarak kullanılan ancak bilimsel/nesnel cümlelerde de
+# bulunabilen sözcükler (ör. "mal varlığı", "hayvan davranışları") yalnızca
+# kısa, hitap biçimli veya "herif/adam" ile birleşmiş bağlamda saldırı sayılır.
+AMBIGUOUS_ATTACK_PATTERNS = [
+    r'^\s*(?:mal|öküz|okuz|eşek|esek|sığır|sigir|hayvan|davar|it|keçi|keci|hödük|hoduk)\s*[.!?,;:-]?\s*$',
+    r'\b(?:sen|siz)\b.{0,30}\b(?:mal|öküz|okuz|eşek|esek|sığır|sigir|hayvan|davar|it|keçi|keci)\b',
+    r'\b(?:sen|siz)\b.{0,30}\b(?:mals[ıi]n|mal[ıi]n|öküzs[üu]n|okuzsun|eşeks[ıi]n|eseksin|hayvans[ıi]n|hayvansin)\b',
+    r'\b(?:mal|öküz|okuz|eşek|esek|sığır|sigir|hayvan|davar|it|keçi|keci)\s+(?:herif|adam|gibi)\b',
 ]
 
 # Kişinin fikrini/bilgisini küçümseyen, küfür içermese de doğrudan hedef alan kalıplar.
 # "Senden hiç bir bok olamaz" gibi yazım aralığı değişen biçimler özellikle korunur.
 PERSONAL_DISMISSAL_PATTERNS = [
     r'\bfikrin\s+(?:bile\s+)?yok\b',
-    r'\b(?:hiçbir|hiç\s+bir)\s+fikrin\s+(?:bile\s+)?yok\b',
+    r'\b(?:hiçbir|hiç\s*bir)\s+fikrin\s+(?:bile\s+)?yok\b',
     r'\bdüşüncen\s+(?:bile\s+)?yok\b',
-    r'\b(?:hiçbir|hiç\s+bir)\s+düşüncen\s+(?:bile\s+)?yok\b',
+    r'\b(?:hiçbir|hiç\s*bir)\s+düşüncen\s+(?:bile\s+)?yok\b',
     r'\bfikirden\s+anlamıyorsun\b',
 ]
 
 # Hakaret kelimesi içermese de kişiyi hedefleyen kalıplar.
 DIRECT_ATTACK_PATTERNS = [
-    r'\bsen\b.{0,45}\banlamıyorsun\b', r'\bsen\b.{0,45}\bbilmiyorsun\b', r'\bbilgin(?:\s+(?:bile|de|da))?\s+yok\b',
-    r'\bhiçbir\s+şey\s+anlamıyorsun\b', r'\bhiçbir\s+şey\s+bilmiyorsun\b',
-    r'\bboş\s+boş\s+konuş\w*\b', r'\bboş\s+konuş\w*\b', r'\bsaçmal\w*\b', r'\buydur\w*\b',
-    r'\byoksa\s+sus\b', r'\bsadece\s+konuş\w*\b', r'\bçeneni\s+kapat\w*\b',
-    r'\bkafanı\s+kullan\w*\b', r'\bkafan\s+basmıyor\b', r'\bkafanı\s+çalıştır\w*\b', r'\baklın\s+yok\b', r'\bokumayı\s+bilmiyor\w*\b', r'\bokuduğunu\s+anlamıyor\w*\b',
+    r'\bsen\b.{0,80}\b(?:anlamıyorsun|anlamiyorsun)\b',
+    r'\bsen\b.{0,80}\b(?:bilmiyorsun|dusunemiyorsun|düşünemiyorsun)\b',
+    r'\bbilgin(?:\s+(?:bile|de|da))?\s+yok\b',
+    r'\b(?:hiçbir|hiç\s*bir)\s+şey\s+(?:anlamıyorsun|anlamiyorsun|bilmiyorsun|bilmiyorsun)\b',
+    r'\b(?:hiçbir|hiç\s*bir)\s+şeyden\s+haber(?:in)?\s+yok\b',
+    r'\b(?:anlamıyorsun|anlamiyorsun|bilmiyorsun|bilmiyorsun|düşünemiyorsun|dusunemiyorsun)\b',
+    r'\bboş\s+boş\s+konuş\w*\b', r'\bboş\s+konuş\w*\b', r'\bboş\s+yap\w*\b', r'\bboşsun\w*\b',
+    r'\bsaçmal\w*\b', r'\bzırval\w*\b', r'\buydur\w*\b',
+    r'\byoksa\s+sus\b', r'\bsadece\s+konuş\w*\b', r'\bsana\s+ne\b', r'\bsanane\b', r'\bçeneni\s+kapat\w*\b',
+    r'\bkafanı\s+kullan\w*\b', r'\bkafan\s+basmıyor\b', r'\bkafan\s+basmiyor\b',
+    r'\bkafanı\s+çalıştır\w*\b', r'\bkafanı\s+calistir\w*\b', r'\baklın\s+yok\b', r'\baklin\s+yok\b',
+    r'\bokumayı\s+bilmiyor\w*\b', r'\bokumayi\s+bilmiyor\w*\b', r'\bokuduğunu\s+anlamıyor\w*\b',
+    r'\bokudugunu\s+anlamiyor\w*\b',
     r'\bkonuyu\s+(?:en\s+)?baştan\s+oku\w*\b', r'\bönce\s+konuyu\s+oku\w*\b',
     r'\bkonuyu\s+okumamış\w*\b', r'\bkonuyu\s+anlamamış\w*\b', r'\bkonuyu\s+anlamadan\b',
     r'\bkonuyu\s+bilmiyorsun\b', r'\bbu\s+konuyu\s+bilmiyorsun\b',
     r'\bbey\w*\b.{0,25}\bev\w*\b.{0,25}\bunut\w*\b',
     *PERSONAL_DISMISSAL_PATTERNS,
-    r'\bsenden\s+(?:(?:hiç|hiçbir|hiç\s+bir)\s+)?(?:bir\s+)?(?:bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
+    *HURTFUL_PERSONAL_PATTERNS,
+    *DEHUMANIZING_ATTACK_PATTERNS,
+    r'\bsenden\s+(?:(?:hiç|hiçbir|hiç\s*bir)\s+)?(?:bir\s+)?(?:şey|sikim|bok|halt)\s+(?:olmaz|olamaz|çıkmaz|yok)\b',
     r'\bsenden\s+adam\s+olmaz\b',
-    r'\b(?:hiçbir|hiç\s+bir)\s+şeyden\s+haber(?:in)?\s+yok\b',
+    r'\bsenden\s+(?:hiçbir|hiç\s*bir)\s+şey\s+(?:anlamıyorsun|bilmiyorsun)\b',
+    r'\b(?:bir|hiçbir|hiç\s*bir)\s+(?:sikim|bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
+    r'\b(?:sik|sikim|yarak|yarrak|mal|bok)\s*kafal[ıi]\w*\b',
+    r'\b(?:kafas[ıi]z|beyinsiz)\w*\b',
+    r'\b(?:bir|hiçbir|hiç\s*bir)\s+şey\s+(?:yapamıyorsun|beceremiyorsun)\b',
+    r'\b(?:işe|ise)\s+yaramıyorsun\w*\b', r'\bbeş\s+para\s+etmiyorsun\w*\b',
+    r'\b(?:beş|bes)\s+para\s+etmezsin\w*\b',
+    r'\b(?:rezilsin|rezil\s+birisin|iğrençsin|igrencsin)\b',
+    r'\b(?:insan\s+değilsin|insan\s+degilsin)\b', r'\b(?:utanmazsın|utanmazsin)\b',
+    r'\b(?:yazıyorsun|yaziyorsun)\s+anca\b',
     r'\byalan\s+söylüyorsun\w*\b', r'\bsallıyorsun\w*\b', r'\bdefol(?:un)?\b',
     r'\bhaddini\s+bil\w*\b', r'\b(?:git|çekil)\s+(?:buradan|başından|işine)\b',
 ]
 
 ACCUSATION_ATTACK_PATTERNS = [
     r'\byalan\s+söylüyorsun\w*\b', r'\bsallıyorsun\w*\b',
+    r'\b(?:uyduruyorsun|uydurup\s+duruyorsun|sallama|uydurma)\w*\b',
 ]
 
 BOUNDARY_ATTACK_PATTERNS = [
     r'\bdefol(?:un)?\b', r'\bhaddini\s+bil\w*\b',
-    r'\b(?:git|çekil)\s+(?:buradan|başından|işine)\b',
+    r'\b(?:git|çekil)\s+(?:buradan|başından|işine)\b', r'\bkaybol\w*\b',
+    r'\b(?:yok\s+ol(?:un|sun)?|uzaklaş(?:ın|in)?|uzaklas(?:in)?|uzak\s+dur|çek\s+git)\b',
 ]
 
 # Tehdit/şiddet ifadeleri ayrı sinyal olarak tutulur; modelin bunları güvenli bir
 # "görüş" gibi aynen bırakması engellenir. Gerçek kişi tespiti veya moderasyon kararı değildir.
 THREAT_PATTERNS = [
-    r'\b(?:seni|sana)\s+(?:döverim|döveceğim|öldürürüm|gebertirim|yaralarım|vururum|bulurum)\b',
-    r'\b(?:öldürürüm|gebertirim|döverim|döveceğim|yaralarım)\b',
+    r'\b(?:seni|sana)\s+(?:döverim|döveceğim|öldürürüm|gebertirim|yaralarım|vururum|bulurum|mahvederim|perişan ederim|perisan ederim)\b',
+    r'\b(?:seni|sana)\s+(?:hayatını|hayatini)\s+(?:zehir ederim|zehirlerim)\b',
+    r'\b(?:seni|sana)\s+(?:yerin dibine sokarım|yerin dibine sokarim|rezil ederim)\b',
+    r'\b(?:öldürürüm|gebertirim|döverim|döveceğim|yaralarım|mahvederim)\b',
+    r'\b(?:gebersene|öl\s+de\s+(?:kurtulalım|kurtulalim)|keşke\s+(?:ölseydin|olseydin|doğmasaydın|dogmasaydin))\b',
 ]
 
 DISAGREEMENT_MARKERS = (
@@ -124,7 +238,8 @@ SOURCE_ATTACK_MARKERS = (
 )
 CONTRIBUTION_CRITICISM_MARKERS = (
     'gereksiz yorum', 'konuyla alakalı', 'konuyla ilgili', 'yorumun yok', 'katkı sağlam',
-    'sadece konuş', 'nereye varmayı', 'boş konuş', 'konuya katkı', 'konudan sap', 'alakasız yorum'
+    'sadece konuş', 'nereye varmayı', 'boş konuş', 'konuya katkı', 'konudan sap', 'alakasız yorum',
+    'bir şeyler yazıyorsun anca', 'bir şey yazıyorsun anca', 'sadece bir şeyler yazıyorsun'
 )
 CONTEXT_REVIEW_ATTACK_MARKERS = (
     'konuyu en baştan oku', 'konuyu baştan oku', 'önce konuyu oku', 'konuyu oku da', 'konuyu okumamış',
@@ -132,9 +247,12 @@ CONTEXT_REVIEW_ATTACK_MARKERS = (
     'cevabın konuyla alakasız', 'yanıtın konuyla alakasız', 'soruyu oku da', 'mesajı oku da'
 )
 EXPERTISE_ATTACK_MARKERS = (
-    'hiçbir şey anlamıyorsun', 'hiçbir şey bilmiyorsun', 'bilgin yok', 'bilgin bile yok', 'bilgin de yok', 'bu konudan anlamıyorsun',
-    'bu konuda bir bilgin yok', 'konuyu bilmiyorsun', 'bu konuyu bilmiyorsun', 'anlamıyorsun', 'bilmiyorsun', 'kafan basmıyor',
-    'aklın yok', 'okumayı bilmiyor', 'okuduğunu anlamıyor'
+    'hiçbir şey anlamıyorsun', 'hiç bir şey anlamıyorsun', 'hiçbir şey bilmiyorsun',
+    'hiç bir şey bilmiyorsun', 'bilgin yok', 'bilgin bile yok', 'bilgin de yok',
+    'bu konudan anlamıyorsun', 'bu konuda bir bilgin yok', 'konuyu bilmiyorsun',
+    'bu konuyu bilmiyorsun', 'anlamıyorsun', 'bilmiyorsun', 'düşünemiyorsun',
+    'kafan basmıyor', 'aklın yok', 'okumayı bilmiyor', 'okuduğunu anlamıyor',
+    'düşünmeden yazıyorsun', 'düşünmeden konuşuyorsun'
 )
 PROMPT_LEAK_MARKERS = (
     'tartışma konusu:', 'iletişim sinyalleri:', 'özgün mesaj:', 'yeniden yazılmış yanıt:',
@@ -143,6 +261,7 @@ PROMPT_LEAK_MARKERS = (
 )
 
 TR_FOLD = str.maketrans({'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u'})
+LEET_TRANSLATION = str.maketrans({'0': 'o', '1': 'i', '3': 'e', '4': 'a', '@': 'a', '$': 's'})
 STOPWORDS = {
     'acaba', 'ama', 'ancak', 'artık', 'bana', 'bence', 'ben', 'bile', 'bir', 'biraz', 'biz',
     'bu', 'bunu', 'bunun', 'burada', 'da', 'daha', 'de', 'diye', 'en', 'gibi', 'hem', 'her',
@@ -151,21 +270,42 @@ STOPWORDS = {
     'yani', 'yerine', 'yok', 'çok', 'kadar', 'gerçekten', 'konuda', 'konuyu', 'konuyla',
 }
 
-# Nokta/leet yazımıyla gizlenmiş iki yaygın küfür için yalnız saldırı kabuğunda
+# Nokta/boşluk/leet yazımıyla gizlenen küfürler için yalnız saldırı kabuğunda
 # kullanılan kalıplar. Metnin tamamını normalleştirmiyoruz; böylece %70 gibi
-# meşru sayılar bozulmadan korunuyor.
+# meşru sayılar ve normal içerik yeniden yazım sırasında bozulmadan korunuyor.
 OBFUSCATED_ATTACK_SHELL_PATTERNS = [
     r'\bb[\W_]*[o0][\W_]*k(?:[\W_]*t[\W_]*a[\W_]*n|[\W_]*l[\W_]*u[\W_]*k)?\b',
     r'\bs[\W_]*[i1][\W_]*k[\W_]*t[\W_]*[i1][\W_]*r(?:[\W_]+g[\W_]*[i1][\W_]*t\w*)?\b',
+    r'\bs[\W_]*[i1][\W_]*k[\W_]*[i1][\W_]*m\w*\b',
+    r'\bs[\W_]*[i1][\W_]*k[\W_]*[i1][\W_]*l\w*\b',
+    r'\bs[\W_]*[i1][\W_]*k[\W_]*[i1][\W_]*r(?:[\W_]+g[\W_]*[i1][\W_]*t\w*)?\b',
+    r'\bs+[iı]+k+[iı]+m\w*\b', r'\bs+[iı]+k+[iı]+l\w*\b',
+    r'\by[\W_]*[a4][\W_]*r(?:[\W_]*r)?[\W_]*[a4][\W_]*k[\W_]*k[\W_]*a[\W_]*f[\W_]*a[\W_]*l[\W_]*[ıi]?\w*\b',
+    r'\by[\W_]*[a4][\W_]*r[\W_]*r?[\W_]*[a4][\W_]*k\w*\b',
+    r'\by[a4]+r+[a4]+k\w*\b',
+    r'\ba[\W_]*m[\W_]*k\b', r'\ba[\W_]*q\b', r'\bo[\W_]*[r4][\W_]*o[\W_]*s[\W_]*p[\W_]*u\w*\b',
+    r'\bp[\W_]*[i1][\W_]*[çc]\w*\b', r'\bg[\W_]*[öo][\W_]*t\w*\b',
+    r'\bs[\W_]*[üu]r[\W_]*t[\W_]*[üu]k\w*\b',
 ]
 
 # Saldırı kabuğunu çıkarırken tüm ana içeriği silmemek için yalnız yüksek güvenli kalıplar.
+# Çok sözcüklü kalıplar tek sözcükten önce gelir; böylece "senden ... olmaz"
+# gibi bir bütün, içindeki argo tek başına sökülüp anlamsız bir kalıntı bırakmadan
+# temizlenir.
 ATTACK_SHELL_PATTERNS = [
+    r'\b(?:senden|sana)\s+(?:(?:hiç|hiçbir|hiç\s*bir)\s+)?(?:bir\s+)?(?:şey|sikim|bok|halt)\s+(?:olmaz|olamaz|çıkmaz|yok)\b',
+    r'\b(?:bir|hiçbir|hiç\s*bir)\s+(?:sikim|bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
+    r'\b(?:sik|sikim|yarak|yarrak|mal|bok)\s*kafal[ıi]\w*\b',
+    r'\b(?:sik|sikim|yarak|yarrak|mal|bok)\s*herif\w*\b',
+    r'\b(?:göt|got)\s*(?:veren|lek|lalesi|herif)\w*\b',
+    r'\borospu\s*(?:çocuğ|cocuğ|cocug)\w*\b',
+    r'\b(?:oç|oc)\s*(?:çocuğ|cocuğ|cocug|ocuğ|ocug)\w*\b',
+    r'\b(?:amına|amina|amını|amini)\s*(?:koyayım|koyayim|koyim|koyarım|koyarim)\b',
+    r'\b(?:seni|sana)\s*(?:sikerim|sikeyim|siktiririm)\b',
     r'\b(?:aptal|salak|mal|gerizek[aâ]l[ıi]|ahmak)\s+m[ıi]s[ıi]n\b',
-    *OFFENSIVE_PATTERNS,
+    *DIRECT_ATTACK_PATTERNS,
     *PERSONAL_DISMISSAL_PATTERNS,
-    r'\bsenden\s+(?:(?:hiç|hiçbir|hiç\s+bir)\s+)?(?:bir\s+)?(?:bok|halt)\s+(?:olmaz|olamaz|çıkmaz)\b',
-    r'\bsenden\s+adam\s+olmaz\b',
+    *OFFENSIVE_PATTERNS,
     *ACCUSATION_ATTACK_PATTERNS,
     *BOUNDARY_ATTACK_PATTERNS,
     *THREAT_PATTERNS,
@@ -244,10 +384,11 @@ def status(load: bool = False) -> dict[str, Any]:
 
 
 def _has_any(patterns: list[str], text: str) -> bool:
-    # Kullanıcılar bazen küfürleri nokta/işaret veya basit leet yazımıyla böler
-    # ("b.o.k", "b0k"). Normal metin korunur; yalnız tespit için ek biçimler aranır.
-    normalized = _normalize(text)
-    forms = (normalized, _detection_text(text))
+    # Kullanıcılar bazen kelimeleri nokta/işaret, boşluk, leet veya uzatılmış
+    # harflerle böler ("b.o.k", "b0k", "s i k i m", "siiikim"). Normal metin
+    # korunur; yalnız tespit için ek biçimler aranır. Bu katman sayıların anlamını
+    # değiştirmez ve yalnız verilen regex ailesinin içinde eşleşme arar.
+    forms = _detection_forms(text)
     return any(
         re.search(p, candidate, flags=re.IGNORECASE | re.DOTALL)
         for candidate in forms
@@ -265,7 +406,7 @@ def _pick_variant(seed: str, variants: tuple[str, ...]) -> str:
 
 def _detection_text(text: str) -> str:
     normalized = _normalize(text)
-    deobfuscated = normalized.translate(str.maketrans({'0': 'o', '1': 'i', '3': 'e', '4': 'a', '@': 'a', '$': 's'}))
+    deobfuscated = normalized.translate(LEET_TRANSLATION)
     return re.sub(r'(?<=\w)[^\w\s]+(?=\w)', '', deobfuscated)
 
 
@@ -275,6 +416,43 @@ def _normalize(text: str) -> str:
 
 def _fold(text: str) -> str:
     return _normalize(text).translate(TR_FOLD)
+
+
+def _collapse_repeated(text: str) -> str:
+    """Tespit için üçlü/uzatılmış harfleri tek harfe indirger.
+
+    Bu dönüşüm yalnızca saldırı aramasında kullanılır; kullanıcı metni hiçbir
+    zaman bu biçime dönüştürülerek gösterilmez.
+    """
+    return re.sub(r'(.)\1+', r'\1', text, flags=re.IGNORECASE)
+
+
+def _compact_detection(text: str) -> str:
+    """Boşluk ve noktalama ile ayrılmış saldırı çekirdeğini birleştirir."""
+    return re.sub(r'[\W_]+', '', text, flags=re.UNICODE)
+
+
+def _detection_forms(text: str) -> tuple[str, ...]:
+    """Küfür/hakaret tespiti için normalize edilmiş güvenli arama görünümleri.
+
+    Dört temel görünüm (normal, Türkçe ASCII katlanmış, noktalı/leet açılmış ve
+    katlanmış açılmış) ile bunların tekrarlı harf ve kompakt biçimleri birlikte
+    aranır. Kompakt görünüm yalnız regex eşleşmesi için kullanılır; sayılar,
+    bağlantılar ve özgün mesajın kendisi değiştirilmez.
+    """
+    normalized = _normalize(text)
+    detected = _detection_text(text)
+    bases = (normalized, _fold(normalized), detected, _fold(detected))
+    forms: list[str] = []
+    for base in bases:
+        for variant in (base, _collapse_repeated(base)):
+            if variant and variant not in forms:
+                forms.append(variant)
+            compact = _compact_detection(variant)
+            for compact_variant in (compact, _collapse_repeated(compact)):
+                if compact_variant and compact_variant not in forms:
+                    forms.append(compact_variant)
+    return tuple(forms)
 
 
 def _sentence(text: str) -> str:
@@ -433,9 +611,9 @@ def _sarcasm_rewrite(text: str, context: str, signals: list[str]) -> tuple[str, 
 def analyze_message(text: str) -> list[str]:
     t = _normalize(text)
     signals: list[str] = []
-    if _has_any(OFFENSIVE_PATTERNS, t):
+    if _has_any(OFFENSIVE_PATTERNS, t) or _has_any(AMBIGUOUS_ATTACK_PATTERNS, t):
         signals.append('hakaret/küfür')
-    if _has_any(DIRECT_ATTACK_PATTERNS, t):
+    if _has_any(DIRECT_ATTACK_PATTERNS, t) or _has_any(ACCUSATION_ATTACK_PATTERNS, t) or _has_any(BOUNDARY_ATTACK_PATTERNS, t):
         signals.append('kişiye yönelik saldırı')
     if _has_any(THREAT_PATTERNS, t):
         signals.append('tehdit/şiddet')
@@ -470,6 +648,14 @@ def _strip_attack_shell(text: str) -> str:
     cleaned = text
     for pattern in ATTACK_SHELL_PATTERNS:
         cleaned = re.sub(pattern, ' ', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    # "mal." / "öküz herif" gibi bağlama bağlı çekirdekleri yalnız saldırı
+    # görünümü zaten güçlü ise çıkar; "mal varlığı" gibi nesnel kullanımlar
+    # burada bozulmaz.
+    if _has_any(AMBIGUOUS_ATTACK_PATTERNS, text):
+        for pattern in (
+            r'\b(?:mal|öküz|okuz|eşek|esek|sığır|sigir|hayvan|davar|it|keçi|keci|hödük|hoduk)\b',
+        ):
+            cleaned = re.sub(pattern, ' ', cleaned, flags=re.IGNORECASE)
     # Tek başına kalan saldırı emirlerini ve hitap kırıntılarını temizle.
     cleaned = re.sub(r'\b(?:sus|saçmalama|kes sesini)\b', ' ', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\s+([,.;!?])', r'\1', cleaned)
@@ -562,6 +748,25 @@ def _expertise_attack(text: str, signals: list[str]) -> bool:
 
 def _has_attack(signals: list[str]) -> bool:
     return any(signal in signals for signal in ('hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet'))
+
+
+def _has_attack_residue(text: str) -> bool:
+    """Temizleme sonrasında hâlâ saldırı çekirdeği kalıp kalmadığını kontrol eder.
+
+    Özellikle harfleri boşlukla ayıran ("s i k i m") veya uzatan ("siiikim")
+    mesajlarda regex kabuğu özgün karakter aralığını bulamayabilir. Bu ikinci
+    kapı, normalize edilmiş görünümler üzerinden saldırı kalıntısı varsa
+    özgün cümleyi kesinlikle geri döndürmez.
+    """
+    return (
+        _has_any(OFFENSIVE_PATTERNS, text)
+        or _has_any(AMBIGUOUS_ATTACK_PATTERNS, text)
+        or _has_any(DIRECT_ATTACK_PATTERNS, text)
+        or _has_any(ACCUSATION_ATTACK_PATTERNS, text)
+        or _has_any(BOUNDARY_ATTACK_PATTERNS, text)
+        or _has_any(THREAT_PATTERNS, text)
+        or _has_any(OBFUSCATED_ATTACK_SHELL_PATTERNS, text)
+    )
 
 
 def _opinion_attack(text: str, signals: list[str]) -> bool:
@@ -752,7 +957,7 @@ def _deterministic_rewrite(text: str, context: str, signals: list[str]) -> tuple
 
     # 8) Geriye anlamlı bir içerik kaldıysa içerik omurgasını koru. Bu dalda model ancak
     # temizlenmiş cümle çok kırık/çok kısa ise devreye girebilir.
-    if has_attack and clean and not _is_contentless_attack_remainder(clean):
+    if has_attack and clean and not _is_contentless_attack_remainder(clean) and not _has_attack_residue(clean):
         clean = re.sub(r'^\s*(?:ama|ancak|ve|ya)\s+', '', clean, flags=re.IGNORECASE)
         if len(clean.split()) >= 5:
             return _sentence(clean), 'attack-shell-removed', True
@@ -879,8 +1084,10 @@ def _candidate_valid(original: str, candidate: str, signals: list[str]) -> tuple
         return False, 'çıktı gereksiz uzun'
     if any(m in cl for m in PROMPT_LEAK_MARKERS):
         return False, 'prompt/ara metin sızıntısı veya doğal olmayan kalıp'
-    if _has_any(OFFENSIVE_PATTERNS, cl) or _has_any(DIRECT_ATTACK_PATTERNS, cl) or _has_any(THREAT_PATTERNS, cl):
+    if _has_attack_residue(c):
         return False, 'kişiselleştirme temizlenmedi'
+    if _has_attack(signals) and cl == ol:
+        return False, 'saldırı içeren özgün mesaj aynen korundu'
     if _has_bad_repetition(c):
         return False, 'tekrarlı/anlamsız üretim'
 
@@ -1066,7 +1273,11 @@ def rewrite_with_ai(text: str, context: str = '', use_ai: bool = True) -> dict[s
     engine = 'hybrid-safe' if deterministic != clean else 'preserve-safe'
     validation_reason = ''
 
-    if use_ai and not high_confidence:
+    # Hakaret/küfür, kişisel saldırı veya tehdit içeren hiçbir mesaj isteğe bağlı
+    # model indirmesine/üretimine bırakılmaz. Bu yol deterministik kalır; böylece
+    # HF tokenı, ağ erişimi veya küçük modelin "yapıcı" diye saldırıyı aynen
+    # bırakması finalist demosunun güvenlik koşulunu değiştiremez.
+    if use_ai and not high_confidence and not _has_attack(signals):
         candidate, generation_reason = _generate_candidate(clean, context, signals)
         if candidate:
             valid, validation_reason = _candidate_valid(clean, candidate, signals)
@@ -1083,8 +1294,7 @@ def rewrite_with_ai(text: str, context: str = '', use_ai: bool = True) -> dict[s
     final_valid, final_reason = _candidate_valid(clean, suggestion, signals)
     if not final_valid:
         safe, safe_tag, _ = _deterministic_rewrite(clean, context, signals)
-        safe_lower = _normalize(safe)
-        safe_ok = not _has_any(OFFENSIVE_PATTERNS, safe_lower) and not _has_any(DIRECT_ATTACK_PATTERNS, safe_lower)
+        safe_ok = not _has_attack_residue(safe)
         nums_ok = all(n.replace(' ', '') in safe.replace(' ', '') for n in _numbers(clean))
         protected_ok = all(tok in safe for tok in _protected_tokens(clean))
         if safe_ok and nums_ok and protected_ok:
@@ -1094,7 +1304,10 @@ def rewrite_with_ai(text: str, context: str = '', use_ai: bool = True) -> dict[s
             validation_reason = validation_reason or final_reason
         else:
             stripped = _strip_attack_shell(clean)
-            suggestion = _sentence(stripped) if stripped else 'Bu görüşe katılmıyorum. Gerekçelerini daha açık paylaşabilir misin?'
+            if stripped and not _has_attack_residue(stripped):
+                suggestion = _sentence(stripped)
+            else:
+                suggestion = 'Kişiye yönelik ifadeler yerine, görüşün kendisini ve dayanaklarını tartışmayı tercih ederim.'
             engine = 'contextual-fallback'
             validation_reason = validation_reason or final_reason
 

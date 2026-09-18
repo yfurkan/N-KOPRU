@@ -16,8 +16,12 @@ olarak bildirir.
   çıktısını karşılaştırır. Gerçek kullanıcı ve etki metriği yolu kapalıdır.
 - Yanıt Koçu; saldırı kabuğunu temizlerken sayı, soru, kaynak talebi, ironi,
   koşullu görüş ve ana anlamı korumaya odaklanır. Kişisel küçümseme, gizlenmiş
-  küfür ve tehdit kalıpları da güvenli yoldan ayrılır; cevap şablonları aynı
-  saldırı ailesinde tek metne kilitlenmez.
+  küfür, birleşik cinsel/ailevi argo, dehümanize edici hitaplar, kovma,
+  tehdit ve kırıcı suçlama kalıpları; noktalı, boşluklu, leet, ASCII, harf
+  uzatmalı ve bitişik yazım varyantlarıyla birlikte güvenli yoldan ayrılır.
+  Saldırı sinyalinde Qwen/Hugging Face yolu çağrılmaz; deterministik güvenli
+  katman kullanılır. Cevap şablonları aynı saldırı ailesinde tek metne
+  kilitlenmez ve nesnel bağlamlar yanlışlıkla saldırı sayılmaz.
 - Mobil menü, analiz çekmecesi, skip-link, canlı durum alanı, klavye ile sekme
   gezinmesi ve reduced-motion desteği korunur.
 
@@ -33,7 +37,7 @@ olarak bildirir.
 
 ## Push öncesi yerel doğrulama
 
-- Backend: 54 test paketi, 1.240 / 1.240.
+- Backend: 54 test paketi, 1.252 / 1.252.
 - Python compileall: başarılı.
 - Frontend production build: başarılı.
 - TypeScript: başarılı.

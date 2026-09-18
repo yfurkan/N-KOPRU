@@ -1,10 +1,10 @@
 {
   "version": "1.5.0",
-  "tests_run": 35,
+  "tests_run": 41,
   "failures": 0,
   "errors": 0,
   "successful": true,
-  "elapsed_seconds": 1.773,
+  "elapsed_seconds": 9.33,
   "bulk_safety_matrix_cases": 96,
   "generated_fuzz_cases": 300,
   "irony_matrix_cases": 40,
@@ -13,5 +13,11 @@
   "obfuscated_attack_cases": 2,
   "threat_cases": 3,
   "response_variety_cases": 7,
-  "total_scenario_checks": 576
+  "reported_screen_cases": 2,
+  "adversarial_attack_cases": 96,
+  "mixed_attack_cases": 13,
+  "hurtful_non_profanity_cases": 12,
+  "false_positive_cases": 12,
+  "model_independent_attack_cases": 27,
+  "total_scenario_checks": 738
 }
