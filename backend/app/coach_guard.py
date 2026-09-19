@@ -15,11 +15,6 @@ _SUBSTANTIVE_SIGNALS = {
     'konuya katkı eleştirisi',
     'bağlamı yeniden değerlendirme talebi',
 }
-_CONSTRUCTIVE_MARKERS = (
-    'görüş', 'düşün', 'fikir', 'gerekçe', 'dayanak', 'kanıt', 'kaynak',
-    'konu', 'tartış', 'açıkla', 'paylaş', 'katılmıyorum', 'katılıyorum',
-    'değerlendir', 'soru', 'bilgi', 'veri', 'iddia', 'yaklaşım', 'eleştiri',
-)
 
 
 def _is_attack(signals: list[str]) -> bool:
@@ -27,11 +22,7 @@ def _is_attack(signals: list[str]) -> bool:
 
 
 def _is_pure_attack(engine_module: Any, original: str, signals: list[str]) -> bool:
-    """Gerçek tartışılabilir içerik taşımayan saldırıyı ayırır.
-
-    Bu sınıflandırma yalnız son kalite kapısında kullanılır. Ana motorun mevcut
-    alan-özel kararlarının yerine geçmez.
-    """
+    """Gerçek tartışılabilir içerik sinyali taşımayan saldırıyı ayırır."""
     if not _is_attack(signals):
         return False
     if _SUBSTANTIVE_SIGNALS.intersection(signals):
@@ -45,13 +36,10 @@ def _is_pure_attack(engine_module: Any, original: str, signals: list[str]) -> bo
 
 
 def _malformed_issue(engine_module: Any, original: str, suggestion: str, signals: list[str]) -> str:
-    """Yalnız saldırı girdilerindeki bozuk son çıktıları yakalar.
+    """Yalnız saldırı girdilerindeki görünür biçimde bozuk son çıktıları yakalar.
 
-    Kritik tasarım kararı: temiz mesajlara bu kapı hiç uygulanmaz. Böylece
-    "götürmek", "bok böceği", "mal varlığı" ve "Sikorsky" gibi daha önce
-    doğrulanmış nesnel bağlamlar yanlış pozitif olmaz. Mevcut deterministik
-    motorun doğru alan-özel yeniden yazımları da yeniden yargılanmaz; yalnız
-    görünür biçimde kırık/kişiselleştirilmiş artıklar reddedilir.
+    Temiz mesajlara bu kapı hiç uygulanmaz. Mevcut motorun saldırıdan sonra
+    koruduğu gerçek içerik de (örn. "Bu öneri çok pahalı...") olduğu gibi kalır.
     """
     text = (suggestion or '').strip()
     if not text:
@@ -61,7 +49,7 @@ def _malformed_issue(engine_module: Any, original: str, suggestion: str, signals
 
     low = engine_module._normalize(text) if hasattr(engine_module, '_normalize') else text.lower()
 
-    # Nihai önerinin kendisi tekrar saldırı olarak sınıflanıyorsa dışarı verme.
+    # Önerinin kendisi hâlâ açık saldırı olarak sınıflanıyorsa dışarı verme.
     try:
         output_signals = list(engine_module.analyze_message(text))
         if _is_attack(output_signals):
@@ -69,8 +57,8 @@ def _malformed_issue(engine_module: Any, original: str, suggestion: str, signals
     except Exception:
         pass
 
-    # Ekran görüntüsünde görülen "Birisin senden daha iyi ..." gibi, saldırı
-    # sökülünce geride kalan öznesiz/kırık iskeletleri açıkça engelle.
+    # Ekran görüntüsündeki "Birisin senden daha iyi ..." sınıfı: saldırı
+    # sökülürken özne/karşılaştırma kabuğu geride kalmış.
     if re.search(r'^(?:birisin|birisiniz|birisi|biri|senden|sizden|senin|sizin|sana|seni)\b', low):
         return 'kırık başlangıç'
     if re.search(r'\b(?:birisin|birisiniz)\b', low):
@@ -78,14 +66,13 @@ def _malformed_issue(engine_module: Any, original: str, suggestion: str, signals
     if re.search(r'\b(?:senden|sizden)\s+daha\s+(?:iyi|kötü|zeki|akıllı|başarılı|mantıklı|değerli)\b', low):
         return 'kişisel karşılaştırma kalıntısı'
 
-    # Salt saldırı için ikinci kişi karşılaştırması/kişiselleştirmesi kalmamalı.
+    # Salt saldırı çıktısında ikinci kişi karşılaştırması kalmamalı. Buna
+    # karşılık saldırıdan sonra kalan gerçek öneri/eleştiri cümlelerine dokunma.
     if _is_pure_attack(engine_module, original, signals):
         if re.search(r'\b(?:senden|sizden|senin|sizin)\b', low):
             return 'ikinci kişi kalıntısı'
-        if not any(marker in low for marker in _CONSTRUCTIVE_MARKERS):
-            return 'salt saldırıdan anlamsız iskelet kaldı'
 
-    # Saldırı temizlenirken gerçek soru veya sayısal bilgi kaybolamaz.
+    # Saldırı temizlenirken açık soru veya sayısal bilgi kaybolamaz.
     if 'soru' in signals and '?' not in text:
         return 'soru niyeti kayboldu'
     if 'sayısal/doğrulanabilir iddia' in signals:
@@ -97,6 +84,8 @@ def _malformed_issue(engine_module: Any, original: str, suggestion: str, signals
         except Exception:
             pass
 
+    # Tek/iki kelimelik anlamsız artıkları engelle. Dört ve üzeri kelimelik
+    # gerçek içerik, özel bozukluk kalıplarına takılmadıysa korunur.
     words = re.findall(r'\b\w+\b', text, flags=re.UNICODE)
     if len(words) < 4 and not text.endswith('?'):
         return 'çok kısa saldırı artığı'
@@ -119,9 +108,6 @@ def _safe_generic(original: str) -> str:
 
 def _fallback(engine_module: Any, original: str, context: str, signals: list[str]) -> str:
     """Bozuk bir ilk çıktı için güvenli ve niyet-koruyan son yedek."""
-    # Ana motorun alan-özel yeniden yazımını tekrar dene. Çoğu durumda sorun
-    # burada zaten çözülür; sadece ekran görüntüsündeki gibi kırık çıktı tekrar
-    # oluşursa aşağıdaki daha dar yedeklere geçilir.
     try:
         deterministic, _, _ = engine_module._deterministic_rewrite(original, context, signals)
         if not _malformed_issue(engine_module, original, deterministic, signals):
@@ -167,11 +153,10 @@ def _fallback(engine_module: Any, original: str, context: str, signals: list[str
 
 
 def _ai_repair(engine_module: Any, original: str, bad_candidate: str, context: str, signals: list[str]) -> str:
-    """Yalnız gerçekten bozuk çıktıda, bellekte hazır yerel modeli ikinci hakem yapar.
+    """Yalnız bozuk çıktıda, bellekte hazır yerel modeli ikinci hakem yapar.
 
-    Model bu fonksiyon tarafından indirilmez veya yüklenmez. Hazır değilse
-    milisaniyelik deterministik yedeğe dönülür. Üretilen yeni metin hem mevcut
-    aday doğrulayıcıdan hem de bu son kalite kapısından geçmek zorundadır.
+    Model burada indirilmez/yüklenmez. Hazır değilse deterministik yedeğe
+    dönülür. Yeni aday hem mevcut doğrulayıcıdan hem son kalite kapısından geçer.
     """
     try:
         status = engine_module.status(load=False)
@@ -245,9 +230,8 @@ def install(engine_module: Any) -> None:
 
         signals = list(result.get('signals') or engine_module.analyze_message(original))
 
-        # En önemli emniyet: bu ek katman yalnız ana motorun saldırı olarak
-        # sınıfladığı girdilerde çalışır. Temiz/nesnel mesajların davranışını
-        # kesinlikle değiştirmez.
+        # Ek katman yalnız ana motorun saldırı olarak sınıfladığı girdilerde
+        # çalışır; temiz/nesnel mesajların davranışını değiştirmez.
         if not _is_attack(signals):
             return result
 
@@ -256,8 +240,8 @@ def install(engine_module: Any) -> None:
         if not issue:
             return result
 
-        # Yalnız problemli adayda, model zaten bellekte hazırsa ikinci yerel AI
-        # hakemi denenir. Böylece her Yanıt Koçu çağrısına 10-20 sn eklenmez.
+        # Yalnız bozuk adayda, model zaten bellekte hazırsa ikinci yerel AI
+        # hakemi denenir. Her çağrıya gereksiz 10-20 saniye eklenmez.
         repaired = _ai_repair(engine_module, original, suggestion, context, signals) if use_ai else ''
         if repaired:
             result['suggestion'] = repaired
