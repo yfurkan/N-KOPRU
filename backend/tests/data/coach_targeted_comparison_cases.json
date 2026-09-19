@@ -1,0 +1,33 @@
+{
+  "pure_attacks": [
+    "senin gibi bir mal görmedim hayatımda",
+    "hayatımda senin kadar aptal birini görmedim",
+    "sizin gibi salakları ilk kez görüyorum",
+    "ömrümde senin kadar beyinsiz birini görmedim",
+    "senin gibi bir gerizekalı görmedim",
+    "senin kadar dangalak birini görmedim",
+    "sizin gibi vasıfsız birini görmedim"
+  ],
+  "mixed": [
+    {
+      "text": "senin gibi bir mal görmedim hayatımda, bu öneri çok pahalı ve uygulanabilir değil",
+      "expected_terms": ["pahalı", "uygulanabilir"]
+    },
+    {
+      "text": "senin gibi bir salak görmedim, bu bilgi hangi araştırmaya dayanıyor?",
+      "expected_terms": ["araştırma"]
+    },
+    {
+      "text": "hayatımda senin kadar aptal birini görmedim; öğrencilerin %70'i bunu kullanıyor",
+      "expected_terms": ["%70"]
+    }
+  ],
+  "false_positives": [
+    "Mal varlığı beyanını doldurdum.",
+    "Senin gibi bir mal sahibi de sözleşmeyi imzalayabilir.",
+    "Bu depodaki mal miktarı geçen aya göre arttı.",
+    "Mal alım sözleşmesini bugün teslim edeceğiz.",
+    "Malzeme listesi eksik."
+  ],
+  "reported_example": "senin gibi bir mal görmedim hayatımda"
+}
