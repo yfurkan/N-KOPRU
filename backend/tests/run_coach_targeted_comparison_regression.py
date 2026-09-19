@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -13,30 +14,12 @@ from app.coach_engine import analyze_message, rewrite_with_ai, _numbers  # noqa:
 
 CTX = 'Üniversitelerde yapay zekâ kullanımı yasaklanmalı mı?'
 ATTACK_SIGNALS = {'hakaret/küfür', 'kişiye yönelik saldırı', 'tehdit/şiddet'}
-
-PURE_ATTACKS = [
-    'senin gibi bir mal görmedim hayatımda',
-    'hayatımda senin kadar aptal birini görmedim',
-    'sizin gibi salakları ilk kez görüyorum',
-    'ömrümde senin kadar beyinsiz birini görmedim',
-    'senin gibi bir gerizekalı görmedim',
-    'senin kadar dangalak birini görmedim',
-    'sizin gibi vasıfsız birini görmedim',
-]
-
-MIXED = [
-    ('senin gibi bir mal görmedim hayatımda, bu öneri çok pahalı ve uygulanabilir değil', ('pahalı', 'uygulanabilir')),
-    ('senin gibi bir salak görmedim, bu bilgi hangi araştırmaya dayanıyor?', ('araştırma',)),
-    ("hayatımda senin kadar aptal birini görmedim; öğrencilerin %70'i bunu kullanıyor", ('%70',)),
-]
-
-FALSE_POSITIVES = [
-    'Mal varlığı beyanını doldurdum.',
-    'Senin gibi bir mal sahibi de sözleşmeyi imzalayabilir.',
-    'Bu depodaki mal miktarı geçen aya göre arttı.',
-    'Mal alım sözleşmesini bugün teslim edeceğiz.',
-    'Malzeme listesi eksik.',
-]
+CASES_PATH = Path(__file__).resolve().parent / 'data' / 'coach_targeted_comparison_cases.json'
+CASES = json.loads(CASES_PATH.read_text(encoding='utf-8'))
+PURE_ATTACKS = CASES['pure_attacks']
+MIXED = [(item['text'], tuple(item['expected_terms'])) for item in CASES['mixed']]
+FALSE_POSITIVES = CASES['false_positives']
+REPORTED_EXAMPLE = CASES['reported_example']
 
 
 class CoachTargetedComparisonRegression(unittest.TestCase):
@@ -80,7 +63,7 @@ class CoachTargetedComparisonRegression(unittest.TestCase):
                 self.assertEqual(result['suggestion'], original, (original, result))
 
     def test_05_reported_user_example_is_fixed_exactly(self):
-        original = 'senin gibi bir mal görmedim hayatımda'
+        original = REPORTED_EXAMPLE
         result = self.rewrite(original)
         self.assertNotEqual(result['suggestion'].casefold(), original.casefold())
         self.assertIn('kişiye yönelik saldırı', result['signals'])
